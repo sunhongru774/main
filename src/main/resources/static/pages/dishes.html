@@ -23,7 +23,10 @@
         .card-body p { margin-bottom: 8px; }
     </style>
 </head>
-<body><div class="header"><a href="/" class="logo"><span>华夏美食</span>地图</a><nav><a href="/pages/dishes.html">全部菜品</a><a href="/pages/ai-recommend.html">AI推荐</a><a href="/pages/cart.html">购物车</a><a href="/pages/orders.html">订单</a><a href="/pages/admin.html" id="adminLink" style="display:none;">管理后台</a><span class="user-info" id="userInfo"></span></nav></div>
+<body><div class="header"><a href="/" class="logo">🍜 <span>华夏美食</span>地图</a><nav>
+        <a href="/pages/dishes.html">🍽️ 全部菜品</a><a href="/pages/ai-recommend.html">🤖 AI推荐</a><a href="/pages/cart.html">🛒 购物车</a><a href="/pages/orders.html">📋 订单</a><a href="/pages/admin.html" id="adminLink" style="display:none;">⚙️ 管理后台</a>
+        <span class="user-info" id="userInfo"></span>
+        </nav></div>
 <div class="dishes-page">
     <h2 style="margin-bottom:8px;">全部菜品</h2>
     <p style="color:rgba(255,255,255,0.4);margin-bottom:20px;">浏览所有菜品，点击可查看详情</p>
@@ -46,6 +49,13 @@ g.innerHTML=res.data.map(function(d){
 var img=d.imageUrl||placeholder;
 return '<div class="dish-card" onclick="goToDish('+d.id+')"><div class="img-wrap"><img src="'+img+'" alt="'+d.name+'" onerror="handleImgError(this)"></div><div class="info"><h3>'+d.name+'</h3><div class="meta">'+(d.province||'')+(d.tasteTags?' - '+d.tasteTags:'')+'</div><div class="price">￥'+d.price+'</div></div></div>';
 }).join('');});}
-checkLogin().then(function(u){var e=document.getElementById('userInfo');updateAdminLink(u);if(u)e.innerHTML='<span>'+(u.nickname||u.username)+'</span><a href="javascript:logout()" style="color:rgba(255,255,255,0.7);">退出</a>';else e.innerHTML='<a href="/pages/login.html" style="color:rgba(255,255,255,0.7);">登录</a>';});
-searchDishes();
+checkLogin().then(function(user){
+        var el=document.getElementById('userInfo');
+        updateAdminLink(user);
+        if(user){
+            el.innerHTML='<span>'+(user.nickname||user.username)+'</span><a href="/pages/user.html" style="color:rgba(255,255,255,0.7);">个人中心</a> <a href="javascript:logout()" style="color:rgba(255,255,255,0.7);">退出</a>';
+        }else{
+            el.innerHTML='<a href="/pages/login.html" style="color:rgba(255,255,255,0.7);">登录</a>';
+        }
+    });searchDishes();
 </script></body></html>

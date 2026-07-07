@@ -27,10 +27,7 @@
 <div class="header">
     <a href="/" class="logo">🍜 <span>华夏美食</span>地图</a>
     <nav>
-        <a href="/pages/dishes.html">🍽️ 全部菜品</a>
-        <a href="/pages/ai-recommend.html">🤖 AI推荐</a>
-        <a href="/pages/cart.html">🛒 购物车</a>
-        <a href="/pages/orders.html">📋 订单</a><a href="/pages/admin.html" id="adminLink" style="display:none;">⚙️ 管理后台</a>
+        <a href="/pages/dishes.html">🍽️ 全部菜品</a><a href="/pages/ai-recommend.html">🤖 AI推荐</a><a href="/pages/cart.html">🛒 购物车</a><a href="/pages/orders.html">📋 订单</a><a href="/pages/admin.html" id="adminLink" style="display:none;">⚙️ 管理后台</a>
         <span class="user-info" id="userInfo"></span>
     </nav>
 </div>
@@ -65,8 +62,17 @@
     function updateQty(id,q){if(q<=0){apiPost('/api/cart/remove',{cartId:id}).then(loadCart);}else{apiPost('/api/cart/update',{cartId:id,quantity:q}).then(loadCart);}}
     function removeItem(id){if(!confirm('确定要删除吗？'))return;apiPost('/api/cart/remove',{cartId:id}).then(loadCart);}
     function showToast(msg,type){var old=document.querySelector('.custom-toast');if(old)old.remove();var el=document.createElement('div');el.className='custom-toast';el.style.cssText='position:fixed;top:80px;right:24px;padding:14px 24px;border-radius:12px;font-size:14px;z-index:9999;animation:fadeSlideIn 0.4s cubic-bezier(0.16,1,0.3,1);min-width:220px;text-align:center;box-shadow:0 12px 36px rgba(0,0,0,0.45);backdrop-filter:blur(12px);font-weight:600;transition:all 0.3s ease;';if(type==='success'){el.style.background='linear-gradient(135deg,#2ecc71,#27ae60)';el.style.color='#ffffff';}else if(type==='error'){el.style.background='linear-gradient(135deg,#e74c3c,#c0392b)';el.style.color='#ffffff';}else{el.style.background='linear-gradient(135deg,#f6d365,#fda085)';el.style.color='#1a1a2e';}el.textContent=msg;document.body.appendChild(el);setTimeout(function(){el.style.opacity='0';el.style.transform='translateX(60px)';setTimeout(function(){el.remove();},300);},2000);}
-function checkout(){showToast('请至前台联系服务员结账','success');}
-    checkLogin().then(function(user){var el=document.getElementById('userInfo');updateAdminLink(user);if(user){el.innerHTML='<span>'+(user.nickname||user.username)+'</span><a href="javascript:logout()" style="color:rgba(255,255,255,0.7);">退出</a>';loadCart();}else{window.location.href='/pages/login.html';}});
+function checkout(){apiPost('/api/order/create',{}).then(function(res){if(res.code===200){showToast('提交成功','success');setTimeout(function(){window.location.href='/pages/orders.html';},1500);}else{showToast(res.message||'提交失败','error');}});}
+    checkLogin().then(function(user){
+        var el=document.getElementById('userInfo');
+        updateAdminLink(user);
+        if(user){
+            el.innerHTML='<span>'+(user.nickname||user.username)+'</span><a href="/pages/user.html" style="color:rgba(255,255,255,0.7);">个人中心</a> <a href="javascript:logout()" style="color:rgba(255,255,255,0.7);">退出</a>';
+        }else{
+            el.innerHTML='<a href="/pages/login.html" style="color:rgba(255,255,255,0.7);">登录</a>';
+        }
+    });
+    loadCart();
 </script>
 </body>
 </html>

@@ -24,6 +24,7 @@
 <div class="header">
     <a href="/" class="logo">🍜 <span>华夏美食</span>地图</a>
     <nav>
+        <a href="/pages/dishes.html">🍽️ 全部菜品</a>
         <a href="/pages/ai-recommend.html">🤖 AI推荐</a>
         <a href="/pages/cart.html">🛒 购物车</a>
         <a href="/pages/orders.html">📋 订单</a><a href="/pages/admin.html" id="adminLink" style="display:none;">⚙️ 管理后台</a>
@@ -69,7 +70,7 @@
     var starRatings={};
     function setStar(dishId,star){starRatings[dishId]=star;document.querySelectorAll('#stars-'+dishId+' span').forEach(function(s){s.classList.toggle('active',parseInt(s.dataset.star)<=star);});}
     function submitReview(dishId){var rating=starRatings[dishId]||5;var content=document.getElementById('content-'+dishId).value.trim();apiPost('/api/review/add',{dishId:dishId,orderId:parseInt(orderId),rating:rating,content:content}).then(function(res){if(res.code===200){alert('评价成功');document.getElementById('review-'+dishId).innerHTML='<p style="color:#2ecc71;">✅ 已评价</p>';}else{alert(res.message||'评价失败');}});}
-    checkLogin().then(function(user){var el=document.getElementById('userInfo');updateAdminLink(user);if(user){el.innerHTML='<span>'+(user.nickname||user.username)+'</span><a href="javascript:logout()" style="color:rgba(255,255,255,0.7);">退出</a>';loadDetail();}else{window.location.href='/pages/login.html';}});
+    checkLogin().then(function(user){var el=document.getElementById('userInfo');updateAdminLink(user);if(user){el.innerHTML='<span>'+(user.nickname||user.username)+'</span><a href="/pages/user.html" style="color:rgba(255,255,255,0.7);">个人中心</a> <a href="javascript:logout()" style="color:rgba(255,255,255,0.7);">退出</a>';loadDetail();}else{window.location.href='/pages/login.html';}});
 </script>
 </body>
 </html>

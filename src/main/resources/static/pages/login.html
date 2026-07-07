@@ -30,9 +30,8 @@
 <div class="header">
     <a href="/" class="logo">🍜 <span>华夏美食</span>地图</a>
     <nav>
-        <a href="/pages/ai-recommend.html">🤖 AI推荐</a>
-        <a href="/pages/cart.html">🛒 购物车</a>
-        <a href="/pages/orders.html">📋 订单</a>
+        <a href="/pages/dishes.html">🍽️ 全部菜品</a><a href="/pages/ai-recommend.html">🤖 AI推荐</a><a href="/pages/cart.html">🛒 购物车</a><a href="/pages/orders.html">📋 订单</a><a href="/pages/admin.html" id="adminLink" style="display:none;">⚙️ 管理后台</a>
+        <span class="user-info" id="userInfo"><a href="/pages/login.html">登录</a></span>
     </nav>
 </div>
 <div class="login-page">
@@ -64,6 +63,11 @@
 </div>
 <script src="/js/api.js"></script>
 <script>
+    // 0. 若已登录，直接跳转回首页，避免重复登录
+    checkLogin().then(function(user){
+        if (user) { window.location.href = '/'; }
+    });
+
     // 1. 统一风格的 Toast 提示条组件
     function showToast(msg, type) {
         // 如果已有旧提示，提前移除，防止屏幕上堆积太多

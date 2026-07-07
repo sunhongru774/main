@@ -60,9 +60,7 @@
 <div class="header">
     <a href="/" class="logo">🍜 <span>华夏美食</span>地图</a>
     <nav>
-        <a href="/pages/ai-recommend.html">🤖 AI推荐</a>
-        <a href="/pages/cart.html">🛒 购物车</a>
-        <a href="/pages/orders.html">📋 订单</a><a href="/pages/admin.html" id="adminLink" style="display:none;">⚙️ 管理后台</a>
+        <a href="/pages/dishes.html">🍽️ 全部菜品</a><a href="/pages/ai-recommend.html">🤖 AI推荐</a><a href="/pages/cart.html">🛒 购物车</a><a href="/pages/orders.html">📋 订单</a><a href="/pages/admin.html" id="adminLink" style="display:none;">⚙️ 管理后台</a>
         <span class="user-info" id="userInfo"></span>
     </nav>
 </div>
@@ -73,11 +71,27 @@
 <script>
     var currentDishId = new URLSearchParams(window.location.search).get('id');
     var placeholder = '/images/dishes/placeholder.jpg';
+    var currentRating = 0;
 
     function renderTags(text, className) {
         var list = (text || '').split(',').map(function(item){ return item.trim(); }).filter(Boolean);
         if (list.length === 0) return '<span style="color:rgba(255,255,255,0.45);">暂无</span>';
         return list.map(function(item){ return '<span class="detail-tag ' + (className || '') + '">' + item + '</span>'; }).join('');
+    }
+
+    function escapeHtml(str) {
+        return (str || '').replace(/[&<>"']/g, function(ch) {
+            return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch];
+        });
+    }
+
+    function setStar(n) {
+        currentRating = n;
+        var spans = document.querySelectorAll('#starSelect span');
+        spans.forEach(function(span, index) {
+            if (index < n) span.classList.add('active');
+            else span.classList.remove('active');
+        });
     }
 
     function loadDish() {
@@ -117,7 +131,7 @@
                 '<button class="btn btn-primary" style="margin-top:12px;" onclick="submitReview()">提交评价</button>' +
                 '</div>' +
                 '<div id="reviewsList"></div>' +
-                '</section>'
+                '</section>';
         });
     }
 
@@ -148,31 +162,16 @@
         });
     }
 
-    checkLogin().then(function(user) {
-        var el = document.getElementById('userInfo');
+    checkLogin().then(function(user){
+        var el=document.getElementById('userInfo');
         updateAdminLink(user);
-        if (user) {
-            el.innerHTML = '<span>' + (user.nickname || user.username) + '</span><a href="javascript:logout()" style="color:rgba(255,255,255,0.7);">退出</a>';
-            apiGet('/api/order/has-dish/' + currentDishId).then(function(r){if(r.data){document.getElementById('reviewForm').style.display='block';}});
-        } else {
-            el.innerHTML = '<a href="/pages/user.html" style="color:rgba(255,255,255,0.7);">个人中心</a>';
+        if(user){
+            el.innerHTML='<span>'+(user.nickname||user.username)+'</span><a href="/pages/user.html" style="color:rgba(255,255,255,0.7);">个人中心</a> <a href="javascript:logout()" style="color:rgba(255,255,255,0.7);">退出</a>';
+            apiGet('/api/order/has-dish/'+currentDishId).then(function(r){if(r.data){document.getElementById('reviewForm').style.display='block';}});
+        }else{
+            el.innerHTML='<a href="/pages/login.html" style="color:rgba(255,255,255,0.7);">登录</a>';
         }
     });
-
-</script><script>
-var currentRating = 5;
-    function setStar(n) {
-        currentRating = n;
-        document.querySelectorAll('#starSelect span').forEach(function(s, i) {
-            s.classList.toggle('active', i < n);
-        });
-    }
-
-    function escapeHtml(text) {
-        var div = document.createElement('div');
-        div.appendChild(document.createTextNode(text || ''));
-        return div.innerHTML;
-    }
 
     function loadReviews() {
         apiGet('/api/review/dish/' + currentDishId).then(function(res) {
