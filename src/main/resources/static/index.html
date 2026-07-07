@@ -71,14 +71,14 @@
             .film-strip-inner { padding: 16px 20px; }
         }
         /* Toast */
-    .custom-toast { position:fixed;top:80px;right:24px;padding:14px 24px;border-radius:12px;font-size:14px;z-index:9999;animation:fadeSlideIn 0.4s cubic-bezier(0.16, 1, 0.3, 1);min-width:220px;text-align:center;box-shadow:0 12px 36px rgba(0,0,0,0.45);backdrop-filter:blur(12px);font-weight:600;transition:all 0.3s ease; }
-    @keyframes fadeSlideIn {
-        from { transform: translateX(100px); opacity: 0; }
-        to { transform: translateX(0); opacity: 1; }
-    }
-    .toast-info { background: linear-gradient(135deg, #f6d365, #fda085); color: #1a1a2e; }
-    .toast-success { background: linear-gradient(135deg, #2ecc71, #27ae60); color: #ffffff; }
-    .toast-error { background: linear-gradient(135deg, #e74c3c, #c0392b); color: #ffffff; }
+        .custom-toast { position:fixed;top:80px;right:24px;padding:14px 24px;border-radius:12px;font-size:14px;z-index:9999;animation:fadeSlideIn 0.4s cubic-bezier(0.16, 1, 0.3, 1);min-width:220px;text-align:center;box-shadow:0 12px 36px rgba(0,0,0,0.45);backdrop-filter:blur(12px);font-weight:600;transition:all 0.3s ease; }
+        @keyframes fadeSlideIn {
+            from { transform: translateX(100px); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+        .toast-info { background: linear-gradient(135deg, #f6d365, #fda085); color: #1a1a2e; }
+        .toast-success { background: linear-gradient(135deg, #2ecc71, #27ae60); color: #ffffff; }
+        .toast-error { background: linear-gradient(135deg, #e74c3c, #c0392b); color: #ffffff; }
 
     </style>
 </head>
@@ -118,6 +118,7 @@
 <script src="/js/api.js"></script>
 <script>
     var ph='data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20width%3D%22200%22%20height%3D%22150%22%20viewBox%3D%220%200%20200%20150%22%3E%3Crect%20width%3D%22200%22%20height%3D%22150%22%20fill%3D%22%231a1a2e%22%20rx%3D%228%22/%3E%3Ctext%20x%3D%22100%22%20y%3D%2280%22%20text-anchor%3D%22middle%22%20fill%3D%22rgba%28255%2C255%2C255%2C0.3%29%22%20font-size%3D%2214%22%20font-family%3D%22sans-serif%22%3E%E6%9A%82%E6%97%A0%E5%9B%BE%E7%89%87%3C/text%3E%3C/svg%3E'; var chart, currentProvince = null, currentDishId = null, provinces = [], dishData = {}, autoScrollTimer = null;
+    var scrollDirection = 1; // 新增：滚动方向，1向右，-1向左
 
     fetch('/data/china.json')
         .then(function(r) { return r.json(); })
@@ -324,6 +325,11 @@
                 '<div class="summary">' + (d.description || '点击查看菜品详情') + '</div>' +
                 '<div class="card-foot"><span class="tags">' + (d.tasteTags || d.sideDishes || '') + '</span><span class="price">¥' + d.price + '</span></div></div></div>';
         }).join('');
+        // 滚动到起始位置并开始自动滚动
+        inner.scrollLeft = 0;
+        scrollDirection = 1;
+        scrollPos = 0;
+        startAutoScroll();
     }
 
     function goDishHome(dishId) {
@@ -374,31 +380,108 @@
         });
     }
 
+    // ========== 自动滚动逻辑（修改部分） ==========
     var scrollState='AUTO_SCROLLING', scrollPos=0, velocity=0, lastX=0, lastTime=0, friction=0.95, autoSpeed=0.5;
-    function startAutoScroll() {
-        stopAutoScroll(); scrollState='AUTO_SCROLLING';
-        autoScrollTimer=setInterval(function(){
-            if(scrollState!=='AUTO_SCROLLING') return;
-            var inner=document.getElementById('filmInner');
-            if(!inner||inner.children.length===0) return;
-            scrollPos+=autoSpeed;
-            if(scrollPos>inner.scrollWidth/2) scrollPos=0;
-            inner.scrollLeft=scrollPos;
-        },16);
-    }
-    function stopAutoScroll(){if(autoScrollTimer){clearInterval(autoScrollTimer);autoScrollTimer=null;}}
+    var isHovering = false; // 新增：是否鼠标悬停
 
-    document.addEventListener('DOMContentLoaded',function(){
-        var inner=document.getElementById('filmInner');
-        if(!inner) return;
-        inner.addEventListener('mousedown',function(e){stopAutoScroll();scrollState='DRAGGING';lastX=e.clientX;lastTime=Date.now();velocity=0;});
-        document.addEventListener('mousemove',function(e){if(scrollState!=='DRAGGING')return;var dx=lastX-e.clientX;var dt=Date.now()-lastTime;if(dt>0)velocity=dx/dt;inner.scrollLeft+=dx;lastX=e.clientX;lastTime=Date.now();});
-        document.addEventListener('mouseup',function(){if(scrollState==='DRAGGING'){scrollState='INERTIA_SLIDING';inertiaScroll();}});
-        function inertiaScroll(){
-            if(scrollState!=='INERTIA_SLIDING') return;
-            if(Math.abs(velocity)<0.1){scrollState='AUTO_SCROLLING';startAutoScroll();return;}
-            inner.scrollLeft+=velocity;velocity*=friction;requestAnimationFrame(inertiaScroll);
+    function startAutoScroll() {
+        stopAutoScroll(); // 清除旧定时器
+        scrollState = 'AUTO_SCROLLING';
+        scrollDirection = 1; // 每次启动重置方向为向右
+        // 如果悬停则不启动
+        if (isHovering) return;
+        autoScrollTimer = setInterval(function() {
+            if (scrollState !== 'AUTO_SCROLLING') return;
+            var inner = document.getElementById('filmInner');
+            if (!inner || inner.children.length === 0) return;
+            var maxScroll = inner.scrollWidth - inner.clientWidth;
+            if (maxScroll <= 0) return; // 无需滚动
+
+            // 更新位置
+            scrollPos += autoSpeed * scrollDirection;
+            // 边界检测与反转
+            if (scrollPos <= 0) {
+                scrollPos = 0;
+                scrollDirection = 1;
+            } else if (scrollPos >= maxScroll) {
+                scrollPos = maxScroll;
+                scrollDirection = -1;
+            }
+            inner.scrollLeft = scrollPos;
+        }, 16);
+    }
+
+    function stopAutoScroll() {
+        if (autoScrollTimer) {
+            clearInterval(autoScrollTimer);
+            autoScrollTimer = null;
         }
+        // 注意：不改变 scrollState，以便恢复时判断
+    }
+
+    // 暂停自动滚动（鼠标悬停时调用）
+    function pauseAutoScroll() {
+        isHovering = true;
+        stopAutoScroll();
+    }
+
+    // 恢复自动滚动（鼠标离开时调用）
+    function resumeAutoScroll() {
+        isHovering = false;
+        // 只有当前状态是自动滚动且没有正在拖动/惯性时才恢复
+        if (scrollState === 'AUTO_SCROLLING') {
+            startAutoScroll();
+        }
+    }
+
+    // ========== 拖动与惯性逻辑（保持不变，但调整恢复逻辑） ==========
+    document.addEventListener('DOMContentLoaded', function() {
+        var inner = document.getElementById('filmInner');
+        if (!inner) return;
+
+        // 鼠标悬停暂停
+        inner.addEventListener('mouseenter', pauseAutoScroll);
+        inner.addEventListener('mouseleave', resumeAutoScroll);
+
+        inner.addEventListener('mousedown', function(e) {
+            // 手动拖动时停止自动滚动并切换到拖动状态
+            stopAutoScroll();
+            scrollState = 'DRAGGING';
+            lastX = e.clientX;
+            lastTime = Date.now();
+            velocity = 0;
+        });
+        document.addEventListener('mousemove', function(e) {
+            if (scrollState !== 'DRAGGING') return;
+            var dx = lastX - e.clientX;
+            var dt = Date.now() - lastTime;
+            if (dt > 0) velocity = dx / dt;
+            inner.scrollLeft += dx;
+            // 更新 scrollPos 以同步自动滚动位置
+            scrollPos = inner.scrollLeft;
+            lastX = e.clientX;
+            lastTime = Date.now();
+        });
+        document.addEventListener('mouseup', function() {
+            if (scrollState === 'DRAGGING') {
+                scrollState = 'INERTIA_SLIDING';
+                // 惯性滑动
+                function inertia() {
+                    if (scrollState !== 'INERTIA_SLIDING') return;
+                    if (Math.abs(velocity) < 0.1) {
+                        // 惯性结束，恢复自动滚动（若未悬停）
+                        scrollState = 'AUTO_SCROLLING';
+                        if (!isHovering) startAutoScroll();
+                        return;
+                    }
+                    inner.scrollLeft += velocity;
+                    scrollPos = inner.scrollLeft;
+                    velocity *= friction;
+                    requestAnimationFrame(inertia);
+                }
+                inertia();
+            }
+        });
     });
 
     checkLogin().then(function(user){
@@ -406,31 +489,31 @@
         updateAdminLink(user);
         if(user){el.innerHTML='<span>'+(user.nickname||user.username)+'</span><a href="/pages/user.html" style="color:rgba(255,255,255,0.7);">个人中心</a> <a href="javascript:logout()" style="color:rgba(255,255,255,0.7);">退出</a>';}
         else{el.innerHTML='<a href="/pages/login.html" style="color:rgba(255,255,255,0.7);">登录</a>';}
-    
-    // 通知轮询
-    var notifTimer = null;
-    function checkNotifications() {
-        apiGet('/api/notification/unread').then(function(res){
-            var links = document.querySelectorAll('.header nav a');
-            var ordersLink = null;
-            links.forEach(function(a){ if(a.textContent.indexOf('订单')>=0) ordersLink=a; });
-            if(!ordersLink) return;
-            var existing = ordersLink.querySelector('.notif-dot');
-            if(res.code===200 && res.data && res.data.length>0) {
-                if(!existing) {
-                    var dot = document.createElement('span');
-                    dot.className = 'notif-dot';
-                    dot.style.cssText = 'position:absolute;top:-4px;right:-12px;width:8px;height:8px;background:#e74c3c;border-radius:50%;';
-                    ordersLink.style.position = 'relative';
-                    ordersLink.appendChild(dot);
+
+        // 通知轮询
+        var notifTimer = null;
+        function checkNotifications() {
+            apiGet('/api/notification/unread').then(function(res){
+                var links = document.querySelectorAll('.header nav a');
+                var ordersLink = null;
+                links.forEach(function(a){ if(a.textContent.indexOf('订单')>=0) ordersLink=a; });
+                if(!ordersLink) return;
+                var existing = ordersLink.querySelector('.notif-dot');
+                if(res.code===200 && res.data && res.data.length>0) {
+                    if(!existing) {
+                        var dot = document.createElement('span');
+                        dot.className = 'notif-dot';
+                        dot.style.cssText = 'position:absolute;top:-4px;right:-12px;width:8px;height:8px;background:#e74c3c;border-radius:50%;';
+                        ordersLink.style.position = 'relative';
+                        ordersLink.appendChild(dot);
+                    }
+                } else {
+                    if(existing) existing.remove();
                 }
-            } else {
-                if(existing) existing.remove();
-            }
-        });
-    }
-    checkNotifications();
-    setInterval(checkNotifications, 30000);});
+            });
+        }
+        checkNotifications();
+        setInterval(checkNotifications, 30000);});
 </script>
 </body>
 </html>
