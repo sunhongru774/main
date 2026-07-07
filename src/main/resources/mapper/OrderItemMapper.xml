@@ -1,6 +1,11 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="org.example.mapper.OrderItemMapper">
+    <select id="countUserOrderedDish" resultType="int">
+        SELECT COUNT(*) FROM order_item oi
+        JOIN order_t o ON oi.order_id = o.id
+        WHERE o.user_id = #{userId} AND oi.dish_id = #{dishId} AND o.status >= 3
+    </select>
     <select id="selectByOrderId" resultType="org.example.entity.OrderItem">
         SELECT * FROM order_item WHERE order_id = #{orderId} ORDER BY created_at ASC
     </select>

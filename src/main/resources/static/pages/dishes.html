@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>全部菜品 - 华夏美食地图</title>
+    <link rel="stylesheet" href="/css/style.css">
+    <style>
+        body { min-height: 100vh; background: #0a0a1a; }
+        .dishes-page { padding-top: 80px; max-width: 1200px; margin: 0 auto; padding-bottom: 40px; padding-left: 20px; padding-right: 20px; }
+        .search-bar { display: flex; gap: 12px; margin-bottom: 24px; }
+        .search-bar input { flex: 1; }
+        .dish-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 16px; }
+        .dish-card { background: #1a1a2e; border: 1px solid rgba(255,255,255,0.06); border-radius: 12px; overflow: hidden; cursor: pointer; transition: all 0.3s; }
+        .dish-card:hover { transform: translateY(-4px); border-color: rgba(246,211,101,0.2); box-shadow: 0 8px 24px rgba(0,0,0,0.3); }
+        .dish-card .img-wrap { height: 160px; background: #111; overflow: hidden; }
+        .dish-card .img-wrap img { width: 100%; height: 100%; object-fit: cover; }
+        .dish-card .info { padding: 14px; }
+        .dish-card .info h3 { font-size: 16px; margin-bottom: 4px; }
+        .dish-card .info .meta { color: rgba(255,255,255,0.4); font-size: 12px; margin-bottom: 8px; }
+        .dish-card .info .price { color: #f6d365; font-size: 18px; font-weight: bold; }
+        .card-body { background: #1a1a2e; border: 1px solid rgba(255,255,255,0.06); border-radius: 12px; padding: 30px; text-align: center; color: rgba(255,255,255,0.4); }
+        .card-body p { margin-bottom: 8px; }
+    </style>
+</head>
+<body><div class="header"><a href="/" class="logo"><span>华夏美食</span>地图</a><nav><a href="/pages/dishes.html">全部菜品</a><a href="/pages/ai-recommend.html">AI推荐</a><a href="/pages/cart.html">购物车</a><a href="/pages/orders.html">订单</a><a href="/pages/admin.html" id="adminLink" style="display:none;">管理后台</a><span class="user-info" id="userInfo"></span></nav></div>
+<div class="dishes-page">
+    <h2 style="margin-bottom:8px;">全部菜品</h2>
+    <p style="color:rgba(255,255,255,0.4);margin-bottom:20px;">浏览所有菜品，点击可查看详情</p>
+    <div class="search-bar"><input class="form-input" id="searchInput" placeholder="搜索菜品名称、省份、口味..." oninput="searchDishes()"><button class="btn btn-primary" onclick="searchDishes()">搜索</button></div>
+    <div class="dish-grid" id="dishGrid"></div>
+</div>
+<script src="/js/api.js"></script>
+<script>
+var placeholder='/images/dishes/placeholder.jpg';
+function goToDish(id){window.location.href='/pages/dish-detail.html?id='+encodeURIComponent(id);}
+function handleImgError(img){img.onerror=null;img.src='/images/dishes/placeholder.jpg';}
+function searchDishes(){
+var kw=document.getElementById('searchInput').value.trim();
+var url='/api/dish/list';
+if(kw)url+='?keyword='+encodeURIComponent(kw);
+apiGet(url).then(function(res){
+var g=document.getElementById('dishGrid');
+if(!res.data||res.data.length===0){g.innerHTML='<div class="card-body" style="grid-column:1/-1;"><p>没有找到相关菜品</p><p style="font-size:13px;">试试其他关键词</p></div>';return;}
+g.innerHTML=res.data.map(function(d){
+var img=d.imageUrl||placeholder;
+return '<div class="dish-card" onclick="goToDish('+d.id+')"><div class="img-wrap"><img src="'+img+'" alt="'+d.name+'" onerror="handleImgError(this)"></div><div class="info"><h3>'+d.name+'</h3><div class="meta">'+(d.province||'')+(d.tasteTags?' - '+d.tasteTags:'')+'</div><div class="price">￥'+d.price+'</div></div></div>';
+}).join('');});}
+checkLogin().then(function(u){var e=document.getElementById('userInfo');updateAdminLink(u);if(u)e.innerHTML='<span>'+(u.nickname||u.username)+'</span><a href="javascript:logout()" style="color:rgba(255,255,255,0.7);">退出</a>';else e.innerHTML='<a href="/pages/login.html" style="color:rgba(255,255,255,0.7);">登录</a>';});
+searchDishes();
+</script></body></html>

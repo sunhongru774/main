@@ -1,7 +1,20 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="org.example.mapper.ReviewMapper">
-    <select id="selectByDishId" resultType="org.example.entity.Review">
-        SELECT * FROM review WHERE dish_id = #{dishId} ORDER BY created_at DESC
+    <resultMap id="ReviewWithUser" type="java.util.Map">
+        <result property="id" column="id"/>
+        <result property="userId" column="user_id"/>
+        <result property="dishId" column="dish_id"/>
+        <result property="orderId" column="order_id"/>
+        <result property="rating" column="rating"/>
+        <result property="content" column="content"/>
+        <result property="createdAt" column="created_at"/>
+        <result property="nickname" column="nickname"/>
+    </resultMap>
+    <select id="selectByDishId" resultMap="ReviewWithUser">
+        SELECT r.*, u.nickname FROM review r
+        LEFT JOIN user u ON r.user_id = u.id
+        WHERE r.dish_id = #{dishId}
+        ORDER BY r.created_at DESC
     </select>
 </mapper>

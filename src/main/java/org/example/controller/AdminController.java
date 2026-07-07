@@ -74,6 +74,17 @@ public class AdminController {
         return R.success(null);
     }
 
+    @PostMapping("/dish/enable")
+    public R<Void> enableDish(@RequestBody Dish dish, HttpSession session) {
+        if (!checkAdmin(session)) return R.forbidden("无权访问");
+        Dish d = dishMapper.selectById(dish.getId());
+        if (d != null) {
+            d.setStatus(1);
+            dishMapper.updateById(d);
+        }
+        return R.success(null);
+    }
+
     // ========== 订单管理(含用户信息) ==========
     @GetMapping("/orders")
     public R<List<Map<String, Object>>> listOrders(HttpSession session) {

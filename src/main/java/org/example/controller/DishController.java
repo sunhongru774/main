@@ -20,7 +20,11 @@ public class DishController {
 
     @GetMapping("/list")
     public R<List<Dish>> list(@RequestParam(required = false) String province,
-                              @RequestParam(required = false) Long categoryId) {
+                              @RequestParam(required = false) Long categoryId,
+                              @RequestParam(required = false) String keyword) {
+        if (keyword != null && !keyword.trim().isEmpty()) {
+            return R.success(dishService.searchByName(keyword));
+        }
         if (province != null && !province.isEmpty()) {
             return R.success(dishService.listByProvince(province));
         }
@@ -36,6 +40,7 @@ public class DishController {
         if (dish == null) return R.error(404, "菜品不存在");
         return R.success(dish);
     }
+
 
     @GetMapping("/category/list")
     public R<List<DishCategory>> categoryList() {

@@ -57,4 +57,24 @@ public class UserServiceImpl implements UserService {
         if (user != null) user.setPassword(null);
         return user;
     }
+
+    @Override
+    public void updateProfile(Long userId, String nickname, String phone) {
+        User user = userMapper.selectById(userId);
+        if (user == null) throw new RuntimeException("用户不存在");
+        if (nickname != null) user.setNickname(nickname);
+        if (phone != null) user.setPhone(phone);
+        userMapper.updateById(user);
+    }
+
+    @Override
+    public void changePassword(Long userId, String oldPassword, String newPassword) {
+        User user = userMapper.selectById(userId);
+        if (user == null) throw new RuntimeException("用户不存在");
+        if (!passwordEncoder.matches(oldPassword, user.getPassword())) {
+            throw new RuntimeException("原密码错误");
+        }
+        user.setPassword(passwordEncoder.encode(newPassword));
+        userMapper.updateById(user);
+    }
 }

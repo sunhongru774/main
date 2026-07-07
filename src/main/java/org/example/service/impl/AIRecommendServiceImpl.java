@@ -135,6 +135,85 @@ public class AIRecommendServiceImpl implements AIRecommendService {
         return result;
     }
 
+    @Override
+    public String chat(String message, java.util.List<String> history) {
+        if (apiKey == null || apiKey.isEmpty() || "sk-placeholder".equals(apiKey)) {
+            return "您好！我是智能点餐助手。请在 application.yml 中配置 DeepSeek API Key 后使用。\n\n配置位置：\n打开 food/src/main/resources/application.yml\n找到 deepseek.api-key 参数，将值替换为你的实际 API Key。\n\n示例：\n｢deepseek:\n  api-key: sk-your-actual-key-here｣";
+        }
+        try {
+            return callDeepSeekChat(message, history);
+        } catch (Exception e) {
+            return "对不起，AI服务异常，请稍后再试。";
+        }
+    }
+
+    private String callDeepSeekChat(String message, java.util.List<String> history) throws Exception {
+        java.net.URL url = new java.net.URL(apiUrl);
+        java.net.HttpURLConnection conn = (java.net.HttpURLConnection) url.openConnection();
+        conn.setRequestMethod("POST");
+        conn.setRequestProperty("Content-Type", "application/json");
+        conn.setRequestProperty("Authorization", "Bearer " + apiKey);
+        conn.setDoOutput(true);
+        conn.setConnectTimeout(15000);
+        conn.setReadTimeout(30000);
+
+        // Build messages using Jackson to avoid manual JSON escaping issues
+        java.util.List<java.util.Map<String, String>> messages = new java.util.ArrayList<>();
+        if (history != null) {
+            for (int i = 0; i < history.size() - 1; i += 2) {
+                java.util.Map<String, String> userMsg = new java.util.HashMap<>();
+                userMsg.put("role", "user");
+                userMsg.put("content", history.get(i));
+                messages.add(userMsg);
+
+                java.util.Map<String, String> asstMsg = new java.util.HashMap<>();
+                asstMsg.put("role", "assistant");
+                asstMsg.put("content", history.get(i + 1));
+                messages.add(asstMsg);
+            }
+        }
+        java.util.Map<String, String> currentMsg = new java.util.HashMap<>();
+        currentMsg.put("role", "user");
+        currentMsg.put("content", message);
+        messages.add(currentMsg);
+
+        java.util.Map<String, Object> requestBody = new java.util.HashMap<>();
+        requestBody.put("model", model);
+        requestBody.put("messages", messages);
+        requestBody.put("temperature", 0.7);
+
+        com.fasterxml.jackson.databind.ObjectMapper mapper = new com.fasterxml.jackson.databind.ObjectMapper();
+        String body = mapper.writeValueAsString(requestBody);
+
+        conn.getOutputStream().write(body.getBytes("UTF-8"));
+
+        StringBuilder response = new StringBuilder();
+        try (java.util.Scanner scanner = new java.util.Scanner(conn.getInputStream(), "UTF-8")) {
+            while (scanner.hasNextLine()) {
+                response.append(scanner.nextLine());
+            }
+        }
+
+        String resp = response.toString();
+        // Parse using Jackson
+        try {
+            com.fasterxml.jackson.databind.JsonNode root = mapper.readTree(resp);
+            String text = root.get("choices").get(0).get("message").get("content").asText();
+            return text;
+        } catch (Exception e2) {
+            // Fallback: try simple string parsing
+            int contentStart = resp.indexOf("\"content\":\"");
+            if (contentStart > 0) {
+                contentStart += 12;
+                int contentEnd = resp.indexOf("\"", contentStart);
+                if (contentEnd > contentStart) {
+                    return resp.substring(contentStart, contentEnd).replace("\\n", "\n").replace("\\\"", "\"");
+                }
+            }
+            return "对不起，暂时无法回答，请稍后再试。";
+        }
+    }
+
     private List<Map<String, Object>> fallbackRecommend(List<Dish> dishes, String taste, Integer budget, Integer peopleCount) {
         List<Map<String, Object>> result = new ArrayList<>();
         int maxTotal = (budget != null && peopleCount != null) ? budget * peopleCount : 200;

@@ -14,6 +14,12 @@ public class AIController {
     @Autowired
     private AIRecommendService aiRecommendService;
 
+    @PostMapping("/chat")
+    public R<String> chat(@RequestBody org.example.dto.AIChatDTO dto) {
+        String result = aiRecommendService.chat(dto.getMessage(), dto.getHistory());
+        return R.success(result);
+    }
+
     @PostMapping("/recommend")
     public R<List<Map<String, Object>>> recommend(@RequestBody AIRecommendDTO dto) {
         List<Map<String, Object>> result = aiRecommendService.recommend(

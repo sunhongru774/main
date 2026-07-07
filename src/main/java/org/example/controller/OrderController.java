@@ -20,6 +20,14 @@ public class OrderController {
     @Autowired
     private OrderItemMapper orderItemMapper;
 
+    @GetMapping("/has-dish/{dishId}")
+    public R<Boolean> hasOrderedDish(@PathVariable Long dishId, HttpSession session) {
+        Long userId = (Long) session.getAttribute("userId");
+        if (userId == null) return R.success(false);
+        int count = orderItemMapper.countUserOrderedDish(userId, dishId);
+        return R.success(count > 0);
+    }
+
     @PostMapping("/create")
     public R<Order> create(@RequestBody(required = false) Map<String, String> params, HttpSession session) {
         Long userId = (Long) session.getAttribute("userId");

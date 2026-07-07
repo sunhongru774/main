@@ -20,6 +20,6 @@ mybatis-plus:
     log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
 
 deepseek:
-  api-key: ${DEEPSEEK_API_KEY:sk-placeholder}
+  api-key: sk-f926a174b90e43b4b35346570921e6d0
   api-url: https://api.deepseek.com/chat/completions
   model: deepseek-chat

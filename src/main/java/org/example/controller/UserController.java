@@ -42,6 +42,37 @@ public class UserController {
         return R.success(user);
     }
 
+    @PostMapping("/update")
+    public R<Void> updateProfile(@RequestBody java.util.Map<String, String> params, HttpSession session) {
+        Long userId = (Long) session.getAttribute("userId");
+        if (userId == null) return R.unauthorized("请先登录");
+        String nickname = params.get("nickname");
+        String phone = params.get("phone");
+        try {
+            userService.updateProfile(userId, nickname, phone);
+            return R.success(null);
+        } catch (RuntimeException e) {
+            return R.error(400, e.getMessage());
+        }
+    }
+
+    @PostMapping("/change-password")
+    public R<Void> changePassword(@RequestBody java.util.Map<String, String> params, HttpSession session) {
+        Long userId = (Long) session.getAttribute("userId");
+        if (userId == null) return R.unauthorized("请先登录");
+        String oldPassword = params.get("oldPassword");
+        String newPassword = params.get("newPassword");
+        if (oldPassword == null || newPassword == null || newPassword.length() < 6) {
+            return R.error(400, "密码至少需要6位");
+        }
+        try {
+            userService.changePassword(userId, oldPassword, newPassword);
+            return R.success(null);
+        } catch (RuntimeException e) {
+            return R.error(400, e.getMessage());
+        }
+    }
+
     @GetMapping("/{id}")
     public R<User> getById(@PathVariable Long id) {
         return R.success(userService.getById(id));

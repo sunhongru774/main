@@ -39,4 +39,15 @@ public class DishServiceImpl implements DishService {
     public List<Dish> listByIds(List<Long> ids) {
         return dishMapper.selectBatchIds(ids);
     }
+
+    @Override
+    public List<Dish> searchByName(String keyword) {
+        LambdaQueryWrapper<Dish> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(Dish::getStatus, 1)
+               .and(w -> w.like(Dish::getName, keyword)
+                    .or().like(Dish::getProvince, keyword)
+                    .or().like(Dish::getTasteTags, keyword))
+               .orderByDesc(Dish::getSalesCount);
+        return dishMapper.selectList(wrapper);
+    }
 }

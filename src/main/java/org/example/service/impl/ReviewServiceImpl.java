@@ -6,6 +6,7 @@ import org.example.service.ReviewService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import java.util.List;
+import java.util.Map;
 
 @Service
 public class ReviewServiceImpl implements ReviewService {
@@ -25,7 +26,8 @@ public class ReviewServiceImpl implements ReviewService {
     }
 
     @Override
-    public List<Review> listByDish(Long dishId) {
-        return reviewMapper.selectByDishId(dishId);
+    @SuppressWarnings("unchecked")
+    public List<Map<String, Object>> listByDish(Long dishId) {
+        return (List<Map<String, Object>>)(Object)reviewMapper.selectByDishId(dishId);
     }
 }

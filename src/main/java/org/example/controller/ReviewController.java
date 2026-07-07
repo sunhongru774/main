@@ -28,7 +28,7 @@ public class ReviewController {
     }
 
     @GetMapping("/dish/{dishId}")
-    public R<List<Review>> listByDish(@PathVariable Long dishId) {
+    public R<List<Map<String, Object>>> listByDish(@PathVariable Long dishId) {
         return R.success(reviewService.listByDish(dishId));
     }
 }

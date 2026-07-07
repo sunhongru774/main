@@ -9,4 +9,5 @@ public interface DishService {
     List<Dish> listByCategory(Long categoryId);
     List<Dish> listAll();
     List<Dish> listByIds(List<Long> ids);
+    List<Dish> searchByName(String keyword);
 }

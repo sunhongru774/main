@@ -35,6 +35,25 @@
             .dish-title { font-size: 36px; }
             .detail-grid { grid-template-columns: 1fr; }
         }
+
+        /* Reviews */
+        .reviews-section { margin-top: 40px; padding-top: 30px; border-top: 1px solid rgba(255,255,255,0.06); }
+        .reviews-section h3 { margin-bottom: 20px; }
+        .review-card { background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.06); border-radius: 12px; padding: 16px; margin-bottom: 12px; }
+        .review-card .review-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+        .review-card .review-user { color: #f6d365; font-size: 14px; font-weight: 500; }
+        .review-card .review-date { color: rgba(255,255,255,0.35); font-size: 12px; }
+        .review-card .review-stars { color: #f6d365; font-size: 14px; margin-bottom: 6px; }
+        .review-card .review-content { color: rgba(255,255,255,0.7); font-size: 14px; line-height: 1.6; }
+        .review-form { background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.06); border-radius: 12px; padding: 20px; margin-bottom: 20px; }
+        .review-form h4 { margin-bottom: 12px; font-size: 15px; color: #f6d365; }
+        .star-select { display: flex; gap: 4px; margin-bottom: 12px; }
+        .star-select span { font-size: 24px; cursor: pointer; color: rgba(255,255,255,0.2); transition: all 0.2s; }
+        .star-select span.active { color: #f6d365; }
+        .star-select span:hover { color: #f6d365; }
+        .review-form textarea { width: 100%; min-height: 80px; resize: vertical; }
+        .empty-reviews { text-align: center; padding: 30px; color: rgba(255,255,255,0.35); }
+
     </style>
 </head>
 <body>
@@ -85,26 +104,109 @@
                 '<div class="detail-block"><div class="label">口味</div><div class="tag-list">' + renderTags(d.tasteTags, '') + '</div></div>' +
                 '<div class="detail-block"><div class="label">配菜</div><div class="tag-list">' + renderTags(d.sideDishes, 'side-tag') + '</div></div>' +
                 '</div>' +
-                '<div class="actions"><a class="btn back-link" href="/">返回地图</a><a class="btn back-link" href="/pages/cart.html">查看购物车</a></div>' +
-                '</section>';
+                '<div class="actions"><a class="btn back-link" href="/">返回地图</a><a class="btn back-link" href="/pages/cart.html">查看购物车</a><a class="btn back-link" href="/pages/dishes.html">全部菜品</a></div>' +
+                '</section>' +
+                '<section class="reviews-section">' +
+                '<h3>⭐ 用户评价</h3>' +
+                '<div id="reviewForm" class="review-form" style="display:none;">' +
+                '<h4>写评价</h4>' +
+                '<div class="star-select" id="starSelect">' +
+                '<span onclick="setStar(1)">★</span><span onclick="setStar(2)">★</span><span onclick="setStar(3)">★</span><span onclick="setStar(4)">★</span><span onclick="setStar(5)">★</span>' +
+                '</div>' +
+                '<textarea class="form-input" id="reviewContent" placeholder="分享你的品尝体验..." rows="2"></textarea>' +
+                '<button class="btn btn-primary" style="margin-top:12px;" onclick="submitReview()">提交评价</button>' +
+                '</div>' +
+                '<div id="reviewsList"></div>' +
+                '</section>'
         });
+    }
+
+    function showToast(msg, type) {
+        var old = document.querySelector('.custom-toast');
+        if (old) old.remove();
+        var el = document.createElement('div');
+        el.className = 'custom-toast';
+        el.style.cssText = 'position:fixed;top:80px;right:24px;padding:14px 24px;border-radius:12px;font-size:14px;z-index:9999;animation:fadeSlideIn 0.4s cubic-bezier(0.16, 1, 0.3, 1);min-width:220px;text-align:center;box-shadow:0 12px 36px rgba(0,0,0,0.45);backdrop-filter:blur(12px);font-weight:600;transition:all 0.3s ease;';
+        el.style.color = '#ffffff';
+        if (type === 'success') { el.style.background = 'linear-gradient(135deg, #2ecc71, #27ae60)'; msg = '✅ ' + msg; }
+        else if (type === 'error') { el.style.background = 'linear-gradient(135deg, #e74c3c, #c0392b)'; msg = '❌ ' + msg; }
+        else { el.style.background = 'linear-gradient(135deg, #f6d365, #fda085)'; el.style.color = '#1a1a2e'; msg = '✨ ' + msg; }
+        el.textContent = msg;
+        document.body.appendChild(el);
+        setTimeout(function() {
+            el.style.opacity = '0';
+            el.style.transform = 'translateX(60px)';
+            setTimeout(function() { el.remove(); }, 300);
+        }, 2000);
     }
 
     function addDishToCart() {
         apiPost('/api/cart/add', { dishId: parseInt(currentDishId), quantity: 1 }).then(function(res) {
-            if (res.code === 200) alert('已加入购物车');
-            else if (res.code === 401) { alert('请先登录'); window.location.href = '/pages/login.html'; }
-            else alert(res.message || '加入购物车失败');
+            if (res.code === 200) showToast('已加入购物车', 'success');
+            else if (res.code === 401) { showToast('请先登录', 'error'); setTimeout(function(){ window.location.href = '/pages/login.html'; }, 800); }
+            else showToast(res.message || '加入购物车失败', 'error');
         });
     }
 
     checkLogin().then(function(user) {
         var el = document.getElementById('userInfo');
         updateAdminLink(user);
-        if (user) el.innerHTML = '<span>' + (user.nickname || user.username) + '</span><a href="javascript:logout()" style="color:rgba(255,255,255,0.7);">退出</a>';
-        else el.innerHTML = '<a href="/pages/login.html" style="color:rgba(255,255,255,0.7);">登录</a>';
+        if (user) {
+            el.innerHTML = '<span>' + (user.nickname || user.username) + '</span><a href="javascript:logout()" style="color:rgba(255,255,255,0.7);">退出</a>';
+            apiGet('/api/order/has-dish/' + currentDishId).then(function(r){if(r.data){document.getElementById('reviewForm').style.display='block';}});
+        } else {
+            el.innerHTML = '<a href="/pages/user.html" style="color:rgba(255,255,255,0.7);">个人中心</a>';
+        }
     });
+
+</script><script>
+var currentRating = 5;
+    function setStar(n) {
+        currentRating = n;
+        document.querySelectorAll('#starSelect span').forEach(function(s, i) {
+            s.classList.toggle('active', i < n);
+        });
+    }
+
+    function escapeHtml(text) {
+        var div = document.createElement('div');
+        div.appendChild(document.createTextNode(text || ''));
+        return div.innerHTML;
+    }
+
+    function loadReviews() {
+        apiGet('/api/review/dish/' + currentDishId).then(function(res) {
+            var list = document.getElementById('reviewsList');
+            if (!res.data || res.data.length === 0) {
+                list.innerHTML = '<div class="empty-reviews">暂无评价</div>';
+                return;
+            }
+            var stars = ['', '★', '★★', '★★★', '★★★★', '★★★★★'];
+            list.innerHTML = res.data.map(function(r) {
+                return '<div class="review-card"><div class="review-header"><span class="review-user">' + escapeHtml(r.nickname || '匿名用户') + '</span><span class="review-date">' + (r.createdAt || '') + '</span></div>' +
+                    '<div class="review-stars">' + stars[r.rating] + '</div>' +
+                    '<div class="review-content">' + escapeHtml(r.content || '') + '</div></div>';
+            }).join('');
+        });
+    }
+
+    function submitReview() {
+        var content = document.getElementById('reviewContent').value.trim();
+        if (!content) { showToast('请输入评价内容', 'error'); return; }
+        apiPost('/api/review/add', { dishId: parseInt(currentDishId), rating: currentRating, content: content }).then(function(res) {
+            if (res.code === 200) {
+                showToast('评价成功', 'success');
+                document.getElementById('reviewContent').value = '';
+                loadReviews();
+            } else {
+                showToast(res.message || '评价失败', 'error');
+            }
+        });
+    }
+
+    loadReviews();
     loadDish();
 </script>
 </body>
+
 </html>

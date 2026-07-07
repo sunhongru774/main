@@ -9,4 +9,5 @@ import java.util.List;
 @Mapper
 public interface OrderItemMapper extends BaseMapper<OrderItem> {
     List<OrderItem> selectByOrderId(@Param("orderId") Long orderId);
+    int countUserOrderedDish(@Param("userId") Long userId, @Param("dishId") Long dishId);
 }
