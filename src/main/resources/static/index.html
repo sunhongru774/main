@@ -70,6 +70,16 @@
             .film-card { width: 220px; min-width: 220px; }
             .film-strip-inner { padding: 16px 20px; }
         }
+        /* Toast */
+    .custom-toast { position:fixed;top:80px;right:24px;padding:14px 24px;border-radius:12px;font-size:14px;z-index:9999;animation:fadeSlideIn 0.4s cubic-bezier(0.16, 1, 0.3, 1);min-width:220px;text-align:center;box-shadow:0 12px 36px rgba(0,0,0,0.45);backdrop-filter:blur(12px);font-weight:600;transition:all 0.3s ease; }
+    @keyframes fadeSlideIn {
+        from { transform: translateX(100px); opacity: 0; }
+        to { transform: translateX(0); opacity: 1; }
+    }
+    .toast-info { background: linear-gradient(135deg, #f6d365, #fda085); color: #1a1a2e; }
+    .toast-success { background: linear-gradient(135deg, #2ecc71, #27ae60); color: #ffffff; }
+    .toast-error { background: linear-gradient(135deg, #e74c3c, #c0392b); color: #ffffff; }
+
     </style>
 </head>
 <body>
@@ -250,7 +260,7 @@
                     borderColor: 'rgba(246,211,101,0.3)',
                     borderWidth: 1
                 },
-                label: { show: true, color: 'rgba(255,255,255,0.4)', fontSize: 10 }
+                label: { show: false }
             };
         });
     }
@@ -260,7 +270,7 @@
             if (res.code === 200 && res.data) {
                 provinces = res.data.map(function(p) { return p.provinceName; });
                 chart.setOption({
-                    series: [{ data: res.data.map(function(p) { return { name: toMapProvinceName(p.provinceName), selected: true, provinceInfo: p }; }) }]
+                    series: [{ data: res.data.map(function(p) { return { name: toMapProvinceName(p.provinceName), provinceInfo: p }; }) }]
                 });
 
                 // 【核心修复】：单次请求获取全量菜品，并在前端按省份分组
@@ -283,7 +293,7 @@
         showProvinceDishes(name);
         var c = { '四川': [102.5,30.5],'广东': [113.5,23.5],'山东': [118,36],'江苏': [119.5,33],'浙江': [120.2,29.5],'福建': [118.5,26],'湖南': [112,27.5],'安徽': [117,31.5],'北京': [116.4,40],'陕西': [109,35.5] };
         var z = { '四川': 1.8,'广东': 2.2,'山东': 2.2,'江苏': 2.5,'浙江': 2.5,'福建': 2.2,'湖南': 2.2,'安徽': 2.5,'北京': 3.0,'陕西': 2.2 };
-        chart.setOption({ geo: { center: c[name] || [104,35], zoom: z[name] || 2 } }, true);
+        chart.setOption({ geo: { center: c[name] || [104,35], zoom: z[name] || 2 } });
         document.getElementById('backBtn').classList.add('active');
     }
 
@@ -299,7 +309,7 @@
         document.getElementById('backBtn').classList.remove('active');
         document.getElementById('filmStrip').style.display = 'none';
         stopAutoScroll();
-        chart.setOption({ geo: { center: [104,35], zoom: 1.1 } }, true);
+        chart.setOption({ geo: { center: [104,35], zoom: 1.1 } });
     }
 
     function updateFilmStrip() {
@@ -341,12 +351,28 @@
     }
 
     function closeModal() { document.getElementById('detailModal').classList.remove('active'); }
+    function showToast(msg, type) {
+        var old = document.querySelector('.custom-toast');
+        if (old) old.remove();
+        var el = document.createElement('div');
+        el.className = 'custom-toast';
+        if (type === 'success') { el.classList.add('toast-success'); msg = '✅ ' + msg; }
+        else if (type === 'error') { el.classList.add('toast-error'); msg = '❌ ' + msg; }
+        else { el.classList.add('toast-info'); msg = '✨ ' + msg; }
+        el.textContent = msg;
+        document.body.appendChild(el);
+        setTimeout(function() {
+            el.style.opacity = '0';
+            el.style.transform = 'translateX(60px)';
+            setTimeout(function() { el.remove(); }, 300);
+        }, 2000);
+    }
     function addToCart() {
         if (!currentDishId) return;
         apiPost('/api/cart/add', {dishId:currentDishId,quantity:1}).then(function(res) {
-            if (res.code === 200) { alert('已加入购物车'); closeModal(); }
-            else if (res.code === 401) { alert('请先登录'); window.location.href='/pages/login.html'; }
-            else { alert(res.message||'操作失败'); }
+            if (res.code === 200) { showToast('已加入购物车', 'success'); closeModal(); }
+            else if (res.code === 401) { showToast('请先登录', 'error'); setTimeout(function(){ window.location.href='/pages/login.html'; }, 800); }
+            else { showToast(res.message||'操作失败', 'error'); }
         });
     }
 
