@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>登录 - 华夏美食地图</title>
+    <link rel="stylesheet" href="/css/style.css">
+    <style>
+        .login-page { display: flex; justify-content: center; align-items: center; min-height: 100vh; background: #0a0a1a; }
+        .login-box { background: #1a1a2e; border: 1px solid rgba(255,255,255,0.06); padding: 40px; border-radius: 16px; width: 380px; max-width: 90%; }
+        .login-box h2 { text-align: center; margin-bottom: 6px; font-size: 24px; }
+        .login-box h2 span { background: linear-gradient(135deg, #f6d365, #fda085, #e74c3c); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .login-box .subtitle { text-align: center; color: rgba(255,255,255,0.4); margin-bottom: 28px; font-size: 14px; }
+        .tabs { display: flex; margin-bottom: 24px; border-bottom: 1px solid rgba(255,255,255,0.06); }
+        .tabs a { flex: 1; text-align: center; padding: 12px; color: rgba(255,255,255,0.5); cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -1px; transition: all 0.3s; }
+        .tabs a.active { color: #f6d365; border-bottom-color: #f6d365; }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+        .login-box .btn { width: 100%; padding: 12px; font-size: 16px; margin-top: 4px; }
+        .back-link { text-align: center; margin-top: 20px; font-size: 14px; }
+        .back-link a { color: rgba(255,255,255,0.4); transition: color 0.3s; }
+        .back-link a:hover { color: #f6d365; }
+        @keyframes fadeSlideIn {
+            from { transform: translateX(100px); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+    </style>
+</head>
+<body>
+<div class="header">
+    <a href="/" class="logo">🍜 <span>华夏美食</span>地图</a>
+    <nav>
+        <a href="/pages/ai-recommend.html">🤖 AI推荐</a>
+        <a href="/pages/cart.html">🛒 购物车</a>
+        <a href="/pages/orders.html">📋 订单</a>
+    </nav>
+</div>
+<div class="login-page">
+    <div class="login-box">
+        <h2>🍜 <span>华夏美食</span>地图</h2>
+        <p class="subtitle">登录以探索中华美食</p>
+        <div class="tabs">
+            <a class="active" onclick="switchTab('login')">登录</a>
+            <a onclick="switchTab('register')">注册</a>
+        </div>
+        <div class="tab-content active" id="tab-login">
+            <form onsubmit="doLogin(event)">
+                <div class="form-group"><label>用户名</label><input class="form-input" id="loginUsername" required placeholder="请输入用户名"></div>
+                <div class="form-group"><label>密码</label><input class="form-input" type="password" id="loginPassword" required placeholder="请输入密码"></div>
+                <button class="btn btn-primary" type="submit">登 录</button>
+            </form>
+        </div>
+        <div class="tab-content" id="tab-register">
+            <form onsubmit="doRegister(event)">
+                <div class="form-group"><label>用户名</label><input class="form-input" id="regUsername" required placeholder="请输入用户名"></div>
+                <div class="form-group"><label>密码</label><input class="form-input" type="password" id="regPassword" required minlength="6" placeholder="至少6位密码"></div>
+                <div class="form-group"><label>昵称</label><input class="form-input" id="regNickname" placeholder="选填"></div>
+                <div class="form-group"><label>手机号</label><input class="form-input" id="regPhone" placeholder="选填"></div>
+                <button class="btn btn-success" type="submit">注 册</button>
+            </form>
+        </div>
+        <div class="back-link"><a href="/">← 返回首页</a></div>
+    </div>
+</div>
+<script src="/js/api.js"></script>
+<script>
+    // 1. 统一风格的 Toast 提示条组件
+    function showToast(msg, type) {
+        // 如果已有旧提示，提前移除，防止屏幕上堆积太多
+        var oldToast = document.querySelector('.custom-toast');
+        if (oldToast) oldToast.remove();
+
+        var el = document.createElement('div');
+        el.className = 'custom-toast';
+        // 核心样式：深色阴影、毛玻璃、圆角、右侧滑入动画
+        el.style.cssText = 'position:fixed;top:80px;right:24px;padding:14px 24px;border-radius:12px;font-size:14px;z-index:9999;animation:fadeSlideIn 0.4s cubic-bezier(0.16, 1, 0.3, 1);min-width:220px;text-align:center;box-shadow:0 12px 36px rgba(0,0,0,0.45);backdrop-filter:blur(12px);font-weight:600;transition:all 0.3s ease;';
+
+        if (type === 'success') {
+            el.style.background = 'linear-gradient(135deg, #2ecc71, #27ae60)';
+            el.style.color = '#ffffff';
+            msg = '✅  ' + msg;
+        } else if (type === 'error') {
+            el.style.background = 'linear-gradient(135deg, #e74c3c, #c0392b)';
+            el.style.color = '#ffffff';
+            msg = '❌  ' + msg;
+        } else {
+            // 信息提示：金色渐变搭配深蓝文字，对比度更高更清晰
+            el.style.background = 'linear-gradient(135deg, #f6d365, #fda085)';
+            el.style.color = '#1a1a2e';
+            msg = '✨  ' + msg;
+        }
+
+        el.textContent = msg;
+        document.body.appendChild(el);
+
+        // 2 秒后自动右移并淡出消失
+        setTimeout(function() {
+            el.style.opacity = '0';
+            el.style.transform = 'translateX(60px)';
+            setTimeout(function() { el.remove(); }, 300);
+        }, 2000);
+    }
+
+    // 2. 标签页切换
+    function switchTab(tab) {
+        document.querySelectorAll('.tabs a').forEach(function(el) { el.classList.remove('active'); });
+        document.querySelectorAll('.tab-content').forEach(function(el) { el.classList.remove('active'); });
+        document.getElementById('tab-' + tab).classList.add('active');
+        document.querySelector('.tabs a[onclick*="' + tab + '"]').classList.add('active');
+    }
+
+    // 3. 登录逻辑 (全部采用 Toast 提示)
+    function doLogin(e) {
+        e.preventDefault();
+        var username = document.getElementById('loginUsername').value.trim();
+        var password = document.getElementById('loginPassword').value.trim();
+
+        if (!username || !password) {
+            showToast('请输入用户名和密码', 'error');
+            return;
+        }
+
+        showToast('正在验证账号信息...', 'info');
+
+        apiPost('/api/user/login', { username: username, password: password }).then(function(res) {
+            if (res.code === 200) {
+                var user = res.data;
+                if (user && (user.role === 1 || user.username === 'admin')) {
+                    showToast('管理员登录成功，准备进入后台...', 'success');
+                    setTimeout(function() { window.location.href = '/pages/admin.html'; }, 600);
+                } else {
+                    showToast('登录成功，欢迎吃货来到美食地图！', 'success');
+                    setTimeout(function() { window.location.href = '/'; }, 600);
+                }
+            } else {
+                showToast(res.message || res.msg || '用户名或密码错误', 'error');
+            }
+        }).catch(function() {
+            showToast('网络请求失败，请检查服务器是否运行', 'error');
+        });
+    }
+
+    // 4. 注册逻辑 (全部采用 Toast 提示)
+    function doRegister(e) {
+        e.preventDefault();
+        var data = {
+            username: document.getElementById('regUsername').value.trim(),
+            password: document.getElementById('regPassword').value.trim(),
+            nickname: document.getElementById('regNickname').value.trim(),
+            phone: document.getElementById('regPhone').value.trim()
+        };
+
+        if (!data.username || !data.password) {
+            showToast('用户名和密码为必填项！', 'error');
+            return;
+        }
+        if (data.password.length < 6) {
+            showToast('为了安全，密码至少需要 6 位字符', 'error');
+            return;
+        }
+
+        apiPost('/api/user/register', data).then(function(res) {
+            if (res.code === 200) {
+                showToast('账号注册成功！请使用新密码登录', 'success');
+                switchTab('login');
+                document.getElementById('loginUsername').value = data.username;
+            } else {
+                showToast(res.message || res.msg || '该用户名已被注册，换个名字吧', 'error');
+            }
+        }).catch(function() {
+            showToast('网络请求失败，请尝试重新提交', 'error');
+        });
+    }
+</script>
+</body>
+</html>

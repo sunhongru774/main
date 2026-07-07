@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="org.example.mapper.DishMapper">
+    <select id="selectByProvince" resultType="org.example.entity.Dish">
+        SELECT * FROM dish WHERE province = #{province} AND status = 1 ORDER BY sales_count DESC
+    </select>
+    <select id="selectByCategoryId" resultType="org.example.entity.Dish">
+        SELECT * FROM dish WHERE category_id = #{categoryId} AND status = 1 ORDER BY sales_count DESC
+    </select>
+</mapper>

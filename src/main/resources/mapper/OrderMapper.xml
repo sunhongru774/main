@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="org.example.mapper.OrderMapper">
+    <select id="selectByUserId" resultType="org.example.entity.Order">
+        SELECT * FROM order_t WHERE user_id = #{userId} ORDER BY created_at DESC
+    </select>
+</mapper>

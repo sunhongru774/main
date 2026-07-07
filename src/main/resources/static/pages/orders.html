@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>我的订单 - 华夏美食地图</title>
+    <link rel="stylesheet" href="/css/style.css">
+    <style>
+        .order-card{background:#1a1a2e;border:1px solid rgba(255,255,255,0.06);border-radius:12px;margin-bottom:16px;overflow:hidden;}
+        .order-header{padding:14px 20px;background:rgba(255,255,255,0.02);display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid rgba(255,255,255,0.06);}
+        .order-header .order-no{font-size:13px;color:rgba(255,255,255,0.4);}
+        .order-body{padding:14px 20px;}
+        .order-item{display:flex;align-items:center;gap:12px;padding:8px 0;border-bottom:1px solid rgba(255,255,255,0.04);}
+        .order-item:last-child{border:none;}
+        .order-item img{width:50px;height:50px;object-fit:cover;border-radius:8px;}
+        .order-item .info{flex:1;}
+        .order-item .info .name{font-size:14px;}
+        .order-item .info .meta{font-size:12px;color:rgba(255,255,255,0.4);}
+        .order-footer{padding:14px 20px;border-top:1px solid rgba(255,255,255,0.06);display:flex;justify-content:space-between;align-items:center;}
+        .order-footer .total{font-size:16px;}
+        .order-footer .total span{color:#f6d365;font-weight:bold;}
+        .status-actions{display:flex;gap:8px;}
+        .empty-orders{text-align:center;padding:80px 20px;color:rgba(255,255,255,0.4);}
+        .empty-orders a{color:#f6d365;}
+
+        /* 通知区域 */
+        .notif-section{margin-bottom:30px;}
+        .notif-section h3{margin-bottom:12px;display:flex;align-items:center;gap:8px;}
+        .notif-badge{background:#e74c3c;color:#fff;font-size:11px;padding:2px 8px;border-radius:20px;}
+        .notif-item{display:flex;align-items:center;gap:14px;background:rgba(246,211,101,0.06);border:1px solid rgba(246,211,101,0.15);border-radius:10px;padding:14px 18px;margin-bottom:10px;animation:fadeIn 0.5s ease;}
+        .notif-item .notif-icon{font-size:24px;}
+        .notif-item .notif-text{flex:1;}
+        .notif-item .notif-text strong{display:block;font-size:14px;margin-bottom:2px;}
+        .notif-item .notif-text p{color:rgba(255,255,255,0.5);font-size:13px;}
+        .notif-item .notif-time{color:rgba(255,255,255,0.3);font-size:12px;white-space:nowrap;}
+        @keyframes fadeIn{from{opacity:0;transform:translateY(-8px);}to{opacity:1;transform:translateY(0);}}
+        .notif-none{text-align:center;padding:30px;color:rgba(255,255,255,0.3);}
+    </style>
+</head>
+<body>
+<div class="header">
+    <a href="/" class="logo">🍜 <span>华夏美食</span>地图</a>
+    <nav>
+        <a href="/pages/ai-recommend.html">🤖 AI推荐</a>
+        <a href="/pages/cart.html">🛒 购物车</a>
+        <a href="/pages/orders.html">📋 订单</a><a href="/pages/admin.html" id="adminLink" style="display:none;">⚙️ 管理后台</a>
+        <span class="user-info" id="userInfo"></span>
+    </nav>
+</div>
+<div class="page-content">
+    <!-- 通知区域 -->
+    <div id="notifSection" class="notif-section">
+        <h3 id="notifTitle">🔔 通知 <span class="notif-badge" id="notifCount" style="display:none;">0</span></h3>
+        <div id="notifList"></div>
+    </div>
+
+    <h2>📋 我的订单</h2>
+    <div id="orderList"></div>
+</div>
+<script src="/js/api.js"></script>
+<script>
+    var statusMap={0:'待支付',1:'已支付',2:'已确认',3:'已上菜',4:'已完成',5:'已取消'};
+    var statusBadge={0:'badge-pending',1:'badge-paid',2:'badge-confirmed',3:'badge-confirmed',4:'badge-completed',5:'badge-cancelled'};
+
+    function loadNotifications(){
+        apiGet('/api/notification/unread').then(function(res){
+            var list=document.getElementById('notifList'),count=document.getElementById('notifCount'),title=document.getElementById('notifTitle');
+            if(res.code!==200||!res.data||res.data.length===0){
+                list.innerHTML='<div class="notif-none">暂无新通知</div>';count.style.display='none';
+                return;
+            }
+            count.style.display='inline';count.textContent=res.data.length;
+            title.textContent='🔔 通知（'+res.data.length+'条新消息）';
+            list.innerHTML=res.data.map(function(n){
+                var time=n.createdAt?n.createdAt.substring(0,16):'';
+                return '<div class="notif-item"><div class="notif-icon">🍽️</div><div class="notif-text"><strong>'+(n.title||'通知')+'</strong><p>'+(n.message||'')+'</p></div><div class="notif-time">'+time+'</div><button class="btn btn-sm btn-outline" onclick="markRead('+n.id+')">已读</button></div>';
+            }).join('')+'<div style="text-align:right;margin-top:8px;"><button class="btn btn-sm btn-primary" onclick="markAllRead()">全部已读</button></div>';
+        });
+    }
+
+    function markRead(id){apiPost('/api/notification/read',{id:id}).then(function(res){if(res.code===200)loadNotifications();});}
+    function markAllRead(){apiPost('/api/notification/read',{}).then(function(res){if(res.code===200)loadNotifications();});}
+
+    function loadOrders(){
+        apiGet('/api/order/list').then(function(res){
+            var list=document.getElementById('orderList');
+            if(!res.data||res.data.length===0){list.innerHTML='<div class="empty-orders"><p>还没有订单</p><a href="/" class="btn btn-primary">去首页选美食</a></div>';return;}
+            var html='';
+            res.data.forEach(function(o){
+                html+='<div class="order-card"><div class="order-header"><span class="order-no">#'+o.orderNo+'</span><span class="badge '+(statusBadge[o.status]||'')+'">'+(statusMap[o.status]||'未知')+'</span></div><div class="order-body" id="items-'+o.id+'">加载中...</div><div class="order-footer"><div class="total">合计: <span>¥'+o.totalPrice+'</span></div><div class="status-actions">'+
+                (o.status===0?'<button class="btn btn-sm btn-success" onclick="updateOrder('+o.id+',1)">支付</button><button class="btn btn-sm btn-danger" onclick="updateOrder('+o.id+',5)">取消</button>':'')+
+                (o.status>=2?'<button class="btn btn-sm btn-primary" onclick="window.location.href=\'/pages/order-detail.html?id='+o.id+'\'">查看详情</button>':'')+
+                '</div></div></div>';
+            });
+            list.innerHTML=html;
+            res.data.forEach(function(o){loadOrderItems(o.id);});
+        });
+    }
+    function loadOrderItems(orderId){apiGet('/api/order/'+orderId).then(function(res){if(res.code!==200||!res.data)return;var el=document.getElementById('items-'+orderId);if(!el)return;el.innerHTML=(res.data.items||[]).map(function(i){return '<div class="order-item"><img src="'+(i.dishImage||'/images/dishes/placeholder.jpg')+'" onerror="this.src=\'/images/dishes/placeholder.jpg\'"><div class="info"><span class="name">'+i.dishName+'</span><span class="meta">¥'+i.price+' × '+i.quantity+'</span></div><div><strong style="color:#f6d365;">¥'+i.subtotal+'</strong></div></div>';}).join('');});}
+    function updateOrder(orderId,status){var msg=status===5?'确定要取消订单吗？':'确认支付？';if(!confirm(msg))return;apiPost('/api/order/status',{orderId:orderId,status:status}).then(function(res){if(res.code===200){alert('操作成功');loadOrders();}else{alert(res.message||'操作失败');}});}
+
+    checkLogin().then(function(user){
+        var el=document.getElementById('userInfo');
+        updateAdminLink(user);
+        if(user){el.innerHTML='<span>'+(user.nickname||user.username)+'</span><a href="javascript:logout()" style="color:rgba(255,255,255,0.7);">退出</a>';loadNotifications();loadOrders();}
+        else{window.location.href='/pages/login.html'};
+    });
+</script>
+</body>
+</html>

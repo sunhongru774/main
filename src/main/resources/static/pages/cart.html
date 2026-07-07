@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>购物车 - 华夏美食地图</title>
+    <link rel="stylesheet" href="/css/style.css">
+    <style>
+        .cart-page { max-width: 900px; margin: 40px auto; }
+        .cart-item { display: flex; align-items: center; padding: 16px; border-bottom: 1px solid rgba(255,255,255,0.06); gap: 16px; }
+        .cart-item img { width: 80px; height: 80px; object-fit: cover; border-radius: 10px; }
+        .cart-item .info { flex: 1; }
+        .cart-item .info h4 { margin-bottom: 4px; font-size: 15px; }
+        .cart-item .info .price { color: #f6d365; font-weight: bold; }
+        .cart-item .qty { display: flex; align-items: center; gap: 8px; }
+        .cart-item .qty button { width: 30px; height: 30px; border: 1px solid rgba(255,255,255,0.1); background: rgba(255,255,255,0.04); border-radius: 8px; cursor: pointer; font-size: 16px; color: #fff; transition: all 0.3s; }
+        .cart-item .qty button:hover { background: rgba(255,255,255,0.1); }
+        .cart-item .qty span { min-width: 20px; text-align: center; }
+        .cart-summary { position: sticky; bottom: 0; background: #1a1a2e; border: 1px solid rgba(255,255,255,0.06); padding: 20px 24px; display: flex; justify-content: space-between; align-items: center; margin-top: 20px; border-radius: 12px; }
+        .cart-summary .total { font-size: 20px; }
+        .cart-summary .total span { color: #f6d365; font-weight: bold; }
+        .empty-cart { text-align: center; padding: 80px 20px; color: rgba(255,255,255,0.4); }
+        .empty-cart p { font-size: 18px; margin-bottom: 20px; }
+    </style>
+</head>
+<body>
+<div class="header">
+    <a href="/" class="logo">🍜 <span>华夏美食</span>地图</a>
+    <nav>
+        <a href="/pages/ai-recommend.html">🤖 AI推荐</a>
+        <a href="/pages/cart.html">🛒 购物车</a>
+        <a href="/pages/orders.html">📋 订单</a><a href="/pages/admin.html" id="adminLink" style="display:none;">⚙️ 管理后台</a>
+        <span class="user-info" id="userInfo"></span>
+    </nav>
+</div>
+<div class="page-content">
+    <h2>🛒 我的购物车</h2>
+    <div id="cartList" class="card"></div>
+    <div class="cart-summary" id="cartSummary" style="display:none;">
+        <div class="total">合计: <span id="totalPrice">¥0.00</span></div>
+        <button class="btn btn-primary" onclick="checkout()">提交订单</button>
+    </div>
+</div>
+<script src="/js/api.js"></script>
+<script>
+    function loadCart() {
+        apiGet('/api/cart/list').then(function(res) {
+            if (res.code === 401) { window.location.href = '/pages/login.html'; return; }
+            var list = document.getElementById('cartList');
+            var summary = document.getElementById('cartSummary');
+            if (!res.data || res.data.length === 0) {
+                list.innerHTML = '<div class="empty-cart"><p>购物车还是空的</p><a href="/" class="btn btn-primary">去首页选美食</a></div>';
+                summary.style.display = 'none'; return;
+            }
+            var html = '<div class="card-body" style="padding:0;">'; var total = 0;
+            res.data.forEach(function(item) { total += item.subtotal;
+                html += '<div class="cart-item"><img src="'+(item.imageUrl||'/images/dishes/placeholder.jpg')+'" onerror="this.src=\'/images/dishes/placeholder.jpg\'"><div class="info"><h4>'+item.dishName+'</h4><span class="price">¥'+item.price+'</span></div><div class="qty"><button onclick="updateQty('+item.cartId+','+(item.quantity-1)+')">−</button><span>'+item.quantity+'</span><button onclick="updateQty('+item.cartId+','+(item.quantity+1)+')">+</button></div><div><strong style="color:#f6d365;">¥'+item.subtotal.toFixed(2)+'</strong></div><button class="btn btn-sm btn-danger" onclick="removeItem('+item.cartId+')">删除</button></div>';
+            });
+            html += '</div>';
+            list.innerHTML = html; summary.style.display = 'flex';
+            document.getElementById('totalPrice').textContent = '¥'+total.toFixed(2);
+        });
+    }
+    function updateQty(id,q){if(q<=0){apiPost('/api/cart/remove',{cartId:id}).then(loadCart);}else{apiPost('/api/cart/update',{cartId:id,quantity:q}).then(loadCart);}}
+    function removeItem(id){if(!confirm('确定要删除吗？'))return;apiPost('/api/cart/remove',{cartId:id}).then(loadCart);}
+    function checkout(){apiPost('/api/order/create',{}).then(function(res){if(res.code===200){alert('下单成功！');window.location.href='/pages/orders.html';}else{alert(res.message||'下单失败');}});}
+    checkLogin().then(function(user){var el=document.getElementById('userInfo');updateAdminLink(user);if(user){el.innerHTML='<span>'+(user.nickname||user.username)+'</span><a href="javascript:logout()" style="color:rgba(255,255,255,0.7);">退出</a>';loadCart();}else{window.location.href='/pages/login.html';}});
+</script>
+</body>
+</html>

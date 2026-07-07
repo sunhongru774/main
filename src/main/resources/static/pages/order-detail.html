@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>订单详情 - 华夏美食地图</title>
+    <link rel="stylesheet" href="/css/style.css">
+    <style>
+        .info-row{display:flex;padding:12px 0;border-bottom:1px solid rgba(255,255,255,0.06);}
+        .info-row .label{width:100px;color:rgba(255,255,255,0.4);flex-shrink:0;}
+        .items-list{margin-top:24px;}
+        .items-list h3{margin-bottom:12px;}
+        .item-row{display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid rgba(255,255,255,0.06);}
+        .item-row img{width:60px;height:60px;object-fit:cover;border-radius:8px;}
+        .review-section{margin-top:24px;}
+        .review-section textarea{width:100%;height:80px;padding:10px 14px;border:1px solid rgba(255,255,255,0.1);border-radius:10px;resize:vertical;margin-bottom:10px;background:rgba(255,255,255,0.04);color:#fff;outline:none;font-size:14px;font-family:inherit;}
+        .review-section textarea:focus{border-color:#f6d365;}
+        .star-select{display:flex;gap:4px;margin-bottom:10px;cursor:pointer;}
+        .star-select span{font-size:28px;color:rgba(255,255,255,0.15);transition:color 0.3s;}
+        .star-select span.active{color:#f6d365;}
+    </style>
+</head>
+<body>
+<div class="header">
+    <a href="/" class="logo">🍜 <span>华夏美食</span>地图</a>
+    <nav>
+        <a href="/pages/ai-recommend.html">🤖 AI推荐</a>
+        <a href="/pages/cart.html">🛒 购物车</a>
+        <a href="/pages/orders.html">📋 订单</a><a href="/pages/admin.html" id="adminLink" style="display:none;">⚙️ 管理后台</a>
+        <span class="user-info" id="userInfo"></span>
+    </nav>
+</div>
+<div class="page-content">
+    <h2>📄 订单详情</h2>
+    <div id="orderDetail"></div>
+</div>
+<script src="/js/api.js"></script>
+<script>
+    var orderId=new URLSearchParams(window.location.search).get('id');
+    var statusMap={0:'待支付',1:'已支付',2:'已确认',3:'已上菜',4:'已完成',5:'已取消'};
+    function loadDetail(){
+        if(!orderId){document.getElementById('orderDetail').innerHTML='<p>订单ID不存在</p>';return;}
+        apiGet('/api/order/'+orderId).then(function(res){
+            if(res.code!==200){document.getElementById('orderDetail').innerHTML='<p>'+(res.message||'订单不存在')+'</p>';return;}
+            var data=res.data,o=data.order,items=data.items||[];
+            var html='<div class="card"><div class="card-body">';
+            html+='<div class="info-row"><div class="label">订单编号</div><div style="color:rgba(255,255,255,0.6);">'+o.orderNo+'</div></div>';
+            html+='<div class="info-row"><div class="label">订单状态</div><div><span class="badge '+(['badge-pending','badge-paid','badge-confirmed','badge-completed','badge-cancelled'][o.status]||'')+'">'+(statusMap[o.status]||'未知')+'</span></div></div>';
+            html+='<div class="info-row"><div class="label">总价</div><div style="color:#f6d365;font-weight:bold;">¥'+o.totalPrice+'</div></div>';
+            html+='<div class="info-row"><div class="label">下单时间</div><div style="color:rgba(255,255,255,0.6);">'+(o.createdAt||'')+'</div></div>';
+            if(o.remark)html+='<div class="info-row"><div class="label">备注</div><div>'+o.remark+'</div></div>';
+            html+='</div></div><div class="items-list"><h3>菜品明细</h3>';
+            items.forEach(function(i){
+                html+='<div class="item-row"><img src="'+(i.dishImage||'/images/dishes/placeholder.jpg')+'" onerror="this.src=\'/images/dishes/placeholder.jpg\'"><div style="flex:1;"><strong>'+i.dishName+'</strong><br><span style="color:rgba(255,255,255,0.4);font-size:13px;">¥'+i.price+' × '+i.quantity+'</span></div><strong style="color:#f6d365;">¥'+i.subtotal+'</strong></div>';
+            });
+            html+='</div>';
+            if(o.status>=2){
+                html+='<div class="review-section"><h3>发表评价</h3>';
+                items.forEach(function(i){
+                    html+='<div style="margin:16px 0;padding:16px;background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.04);border-radius:10px;" id="review-'+i.dishId+'"><p><strong>'+i.dishName+'</strong></p><div class="star-select" id="stars-'+i.dishId+'">';
+                    for(var s=1;s<=5;s++)html+='<span data-star="'+s+'" onclick="setStar('+i.dishId+','+s+')">★</span>';
+                    html+='</div><textarea id="content-'+i.dishId+'" placeholder="写出你的评价..."></textarea><button class="btn btn-sm btn-primary" onclick="submitReview('+i.dishId+')">提交评价</button></div>';
+                });
+                html+='</div>';
+            }
+            document.getElementById('orderDetail').innerHTML=html;
+        });
+    }
+    var starRatings={};
+    function setStar(dishId,star){starRatings[dishId]=star;document.querySelectorAll('#stars-'+dishId+' span').forEach(function(s){s.classList.toggle('active',parseInt(s.dataset.star)<=star);});}
+    function submitReview(dishId){var rating=starRatings[dishId]||5;var content=document.getElementById('content-'+dishId).value.trim();apiPost('/api/review/add',{dishId:dishId,orderId:parseInt(orderId),rating:rating,content:content}).then(function(res){if(res.code===200){alert('评价成功');document.getElementById('review-'+dishId).innerHTML='<p style="color:#2ecc71;">✅ 已评价</p>';}else{alert(res.message||'评价失败');}});}
+    checkLogin().then(function(user){var el=document.getElementById('userInfo');updateAdminLink(user);if(user){el.innerHTML='<span>'+(user.nickname||user.username)+'</span><a href="javascript:logout()" style="color:rgba(255,255,255,0.7);">退出</a>';loadDetail();}else{window.location.href='/pages/login.html';}});
+</script>
+</body>
+</html>

@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>管理后台 - 华夏美食地图</title>
+    <link rel="stylesheet" href="/css/style.css">
+    <style>
+        .admin-page{display:flex;min-height:calc(100vh - 64px);padding-top:64px;}
+        .admin-sidebar{width:220px;background:#12122a;border-right:1px solid rgba(255,255,255,0.06);padding:20px 0;flex-shrink:0;}
+        .admin-sidebar a{display:block;padding:12px 24px;color:rgba(255,255,255,0.5);transition:all 0.3s;cursor:pointer;font-size:14px;}
+        .admin-sidebar a:hover,.admin-sidebar a.active{background:rgba(255,255,255,0.04);color:#f6d365;border-right:2px solid #f6d365;}
+        .admin-content{flex:1;padding:30px;overflow-x:auto;}
+        .admin-content h2{margin-bottom:20px;}
+        .page-section{display:none;}
+        .page-section.active{display:block;}
+        .action-bar{margin-bottom:16px;}
+        .form-row{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:16px;}
+        .form-row .form-group{flex:1;min-width:150px;}
+
+        /* Revenue cards */
+        .revenue-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;margin-bottom:30px;}
+        .revenue-card{background:#1a1a2e;border:1px solid rgba(255,255,255,0.06);border-radius:12px;padding:24px;text-align:center;}
+        .revenue-card .number{font-size:32px;font-weight:bold;color:#f6d365;margin-top:8px;}
+        .revenue-card .label{color:rgba(255,255,255,0.4);font-size:14px;}
+        .revenue-card .icon{font-size:28px;margin-bottom:8px;}
+
+        /* Order card in admin */
+        .admin-order-card{background:#1a1a2e;border:1px solid rgba(255,255,255,0.06);border-radius:12px;margin-bottom:16px;overflow:hidden;}
+        .admin-order-header{padding:14px 20px;background:rgba(255,255,255,0.02);display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid rgba(255,255,255,0.06);flex-wrap:wrap;gap:8px;}
+        .admin-order-header .user-info{color:rgba(255,255,255,0.7);font-size:13px;}
+        .admin-order-header .user-info strong{color:#f6d365;}
+        .admin-order-body{padding:14px 20px;}
+        .admin-order-item{display:flex;align-items:center;gap:10px;padding:6px 0;font-size:13px;color:rgba(255,255,255,0.6);}
+        .admin-order-footer{padding:12px 20px;border-top:1px solid rgba(255,255,255,0.06);display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;}
+    </style>
+</head>
+<body>
+<div class="header">
+    <a href="/" class="logo">🍜 <span>华夏美食</span>地图</a>
+    <nav>
+        <a href="/pages/ai-recommend.html">🤖 AI推荐</a>
+        <a href="/pages/cart.html">🛒 购物车</a>
+        <a href="/pages/orders.html">📋 订单</a>
+        <span class="user-info" id="userInfo"></span>
+    </nav>
+</div>
+<div class="admin-page">
+    <div class="admin-sidebar">
+        <a class="active" onclick="switchPage('orders-admin')">📦 订单管理</a>
+        <a onclick="switchPage('revenue')">💰 本月收益</a>
+        <a onclick="switchPage('dishes')">📋 菜品管理</a>
+        <a onclick="switchPage('users')">👥 用户管理</a>
+        <a href="/">← 返回首页</a>
+    </div>
+    <div class="admin-content">
+        <!-- 订单管理 -->
+        <div class="page-section active" id="page-orders-admin">
+            <h2>📦 订单管理</h2>
+            <div id="adminOrderList"></div>
+        </div>
+
+        <!-- 收益统计 -->
+        <div class="page-section" id="page-revenue">
+            <h2>💰 本月收益</h2>
+            <div class="revenue-grid" id="revenueCards">
+                <div class="revenue-card"><div class="icon">💰</div><div class="label">本月总收益</div><div class="number" id="revTotal">加载中...</div></div>
+                <div class="revenue-card"><div class="icon">📋</div><div class="label">本月订单数</div><div class="number" id="revOrders">加载中...</div></div>
+                <div class="revenue-card"><div class="icon">📅</div><div class="label">统计月份</div><div class="number" id="revMonth">加载中...</div></div>
+            </div>
+        </div>
+
+        <!-- 菜品管理 -->
+        <div class="page-section" id="page-dishes">
+            <h2>📋 菜品管理</h2>
+            <div class="action-bar"><button class="btn btn-primary" onclick="showDishForm()">+ 新增菜品</button></div>
+            <div class="table-wrap"><table id="dishTable"><thead><tr><th>ID</th><th>名称</th><th>价格</th><th>省份</th><th>口味</th><th>状态</th><th>销量</th><th>操作</th></tr></thead><tbody></tbody></table></div>
+        </div>
+
+        <!-- 用户管理 -->
+        <div class="page-section" id="page-users">
+            <h2>👥 用户管理</h2>
+            <div class="table-wrap"><table id="userTable"><thead><tr><th>ID</th><th>用户名</th><th>昵称</th><th>手机</th><th>角色</th><th>状态</th><th>操作</th></tr></thead><tbody></tbody></table></div>
+        </div>
+    </div>
+</div>
+
+<!-- 菜品编辑弹窗 -->
+<div class="modal-overlay" id="dishModal">
+    <div class="modal"><div class="modal-header"><h3 id="dishModalTitle">新增菜品</h3><button class="modal-close" onclick="closeDishModal()">×</button></div>
+    <div class="modal-body">
+        <div class="form-row"><div class="form-group"><label>菜品名称</label><input class="form-input" id="f_name"></div><div class="form-group"><label>价格(元)</label><input class="form-input" type="number" id="f_price" step="0.01"></div></div>
+        <div class="form-row"><div class="form-group"><label>省份</label><select class="form-select" id="f_province"><option value="">请选择</option><option>四川</option><option>广东</option><option>山东</option><option>江苏</option><option>浙江</option><option>福建</option><option>湖南</option><option>安徽</option><option>北京</option><option>陕西</option></select></div><div class="form-group"><label>分类</label><select class="form-select" id="f_category"><option value="">请选择</option><option value="1">川菜</option><option value="2">粤菜</option><option value="3">鲁菜</option><option value="4">淮扬菜</option><option value="5">浙菜</option><option value="6">闽菜</option><option value="7">湘菜</option><option value="8">徽菜</option><option value="9">京菜</option><option value="10">陕菜</option></select></div></div>
+        <div class="form-group"><label>口味标签(逗号分隔)</label><input class="form-input" id="f_taste"></div>
+        <div class="form-group"><label>菜品描述</label><textarea class="form-input" id="f_desc" rows="2"></textarea></div>
+        <div class="form-group"><label>配菜(逗号分隔)</label><input class="form-input" id="f_sides"></div>
+    </div>
+    <div class="modal-footer">
+        <button class="btn btn-outline" onclick="closeDishModal()">取消</button>
+        <button class="btn btn-primary" onclick="saveDish()" style="margin-left:8px;">保存</button>
+    </div></div>
+</div>
+
+<script src="/js/api.js"></script>
+<script>
+    var editingDishId=null, statusMap={0:'待支付',1:'已支付',2:'已确认',3:'已上菜',4:'已完成',5:'已取消'}, statusColors={0:'badge-pending',1:'badge-paid',2:'badge-confirmed',3:'badge-confirmed',4:'badge-completed',5:'badge-cancelled'};
+
+    function switchPage(name){
+        document.querySelectorAll('.page-section').forEach(function(e){e.classList.remove('active');});
+        document.querySelectorAll('.admin-sidebar a').forEach(function(e){e.classList.remove('active');});
+        document.getElementById('page-'+name).classList.add('active');
+        document.querySelector('.admin-sidebar a[onclick*="'+name+'"]').classList.add('active');
+        if(name==='orders-admin') loadAdminOrders();
+        else if(name==='revenue') loadRevenue();
+        else if(name==='dishes') loadDishes();
+        else if(name==='users') loadUsers();
+    }
+
+    // ==================== 订单管理 ====================
+    function loadAdminOrders(){
+        apiGet('/api/admin/orders').then(function(res){
+            if(res.code===403){alert('无权访问');window.location.href='/';return;}
+            var list=document.getElementById('adminOrderList');
+            if(!res.data||res.data.length===0){list.innerHTML='<div style="text-align:center;padding:60px 20px;color:rgba(255,255,255,0.4);"><p>暂无订单数据</p></div>';return;}
+            list.innerHTML='';
+            res.data.forEach(function(item){
+                var o=item.order, username=item.user||'未知', nickname=item.nickname||'';
+                var items=item.items||[];
+                var actions='';
+                if(o.status===0) actions+='<button class="btn btn-sm btn-success" onclick="adminOrderStatus('+o.id+',1)">确认支付</button> ';
+                if(o.status===1) actions+='<button class="btn btn-sm btn-primary" onclick="adminOrderStatus('+o.id+',2)">确认订单</button> ';
+                if(o.status===2) actions+='<button class="btn btn-sm btn-success" onclick="adminOrderStatus('+o.id+',3)">✅ 已上菜</button> ';
+                if(o.status===3) actions+='<button class="btn btn-sm btn-outline" onclick="adminOrderStatus('+o.id+',4)">完成</button> ';
+
+                var itemsHtml=items.map(function(i){
+                    return '<div class="admin-order-item">• '+i.dishName+' × '+i.quantity+' <span style="color:#f6d365;">¥'+i.subtotal+'</span></div>';
+                }).join('');
+
+                var card=document.createElement('div');
+                card.className='admin-order-card';
+                card.innerHTML='<div class="admin-order-header"><span><span class="badge '+(statusColors[o.status]||'')+'">'+(statusMap[o.status]||'未知')+'</span> <span class="order-no" style="color:rgba(255,255,255,0.4);font-size:13px;margin-left:8px;">#'+o.orderNo+'</span></span><span class="user-info">👤 <strong>'+username+'</strong>'+(nickname?' ('+nickname+')':'')+'</span></div>'+
+                '<div class="admin-order-body">'+itemsHtml+'</div>'+
+                '<div class="admin-order-footer"><span style="font-size:16px;">合计: <strong style="color:#f6d365;">¥'+o.totalPrice+'</strong></span><span style="color:rgba(255,255,255,0.4);font-size:12px;">'+(o.createdAt||'')+'</span><div>'+actions+'</div></div>';
+                list.appendChild(card);
+            });
+        });
+    }
+
+    function adminOrderStatus(orderId,status){
+        var msg={1:'确认收到支付？',2:'确认接单？',3:'确认已上菜？（系统将通知用户）',4:'标记为已完成？'};
+        if(!confirm(msg[status]||'确认操作？')) return;
+        apiPost('/api/admin/order/status',{id:orderId,status:status}).then(function(res){
+            if(res.code===200){if(status===3)alert('✅ 已通知用户：订单已上菜');loadAdminOrders();}
+            else alert(res.message||'操作失败');
+        });
+    }
+
+    // ==================== 收益统计 ====================
+    function loadRevenue(){
+        apiGet('/api/admin/revenue').then(function(res){
+            if(res.code!==200) return;
+            var d=res.data;
+            document.getElementById('revTotal').textContent='¥'+(d.totalRevenue||0).toFixed(2);
+            document.getElementById('revOrders').textContent=d.orderCount||0;
+            document.getElementById('revMonth').textContent=d.year+'年'+d.month+'月';
+        });
+    }
+
+    // ==================== 菜品管理 ====================
+    function loadDishes(){apiGet('/api/admin/dishes').then(function(res){if(res.code===403){alert('无权访问');return;}var tbody=document.querySelector('#dishTable tbody');if(!res.data||res.data.length===0){tbody.innerHTML='<tr><td colspan="8" style="text-align:center;color:rgba(255,255,255,0.4);">暂无数据</td></tr>';return;}tbody.innerHTML=res.data.map(function(d){return '<tr><td>'+d.id+'</td><td>'+d.name+'</td><td>¥'+d.price+'</td><td>'+(d.province||'-')+'</td><td>'+(d.tasteTags||'-')+'</td><td>'+(d.status===1?'上架':'下架')+'</td><td>'+d.salesCount+'</td><td><button class="btn btn-sm btn-outline" onclick="editDish('+d.id+')">编辑</button> <button class="btn btn-sm btn-danger" onclick="deleteDish('+d.id+')">下架</button></td></tr>';}).join('');});}
+    function editDish(id){editingDishId=id;apiGet('/api/dish/'+id).then(function(res){if(res.code!==200)return;var d=res.data;document.getElementById('dishModalTitle').textContent='编辑菜品';document.getElementById('f_name').value=d.name||'';document.getElementById('f_price').value=d.price||'';document.getElementById('f_province').value=d.province||'';document.getElementById('f_category').value=d.categoryId||'';document.getElementById('f_taste').value=d.tasteTags||'';document.getElementById('f_desc').value=d.description||'';document.getElementById('f_sides').value=d.sideDishes||'';document.getElementById('dishModal').classList.add('active');});}
+    function showDishForm(){editingDishId=null;document.getElementById('dishModalTitle').textContent='新增菜品';['f_name','f_price','f_province','f_category','f_taste','f_desc','f_sides'].forEach(function(id){document.getElementById(id).value='';});document.getElementById('dishModal').classList.add('active');}
+    function closeDishModal(){document.getElementById('dishModal').classList.remove('active');}
+    function saveDish(){var data={id:editingDishId,name:document.getElementById('f_name').value.trim(),price:parseFloat(document.getElementById('f_price').value)||0,province:document.getElementById('f_province').value,categoryId:parseInt(document.getElementById('f_category').value)||null,tasteTags:document.getElementById('f_taste').value.trim(),description:document.getElementById('f_desc').value.trim(),sideDishes:document.getElementById('f_sides').value.trim(),status:1};if(!data.name){alert('请输入菜品名称');return;}apiPost('/api/admin/dish/save',data).then(function(res){if(res.code===200){alert('保存成功');closeDishModal();loadDishes();}else{alert(res.message||'保存失败');}});}
+    function deleteDish(id){if(!confirm('确认下架该菜品？'))return;apiPost('/api/admin/dish/delete',{id:id}).then(function(res){if(res.code===200){alert('已下架');loadDishes();}else{alert(res.message);}});}
+
+    // ==================== 用户管理 ====================
+    function loadUsers(){apiGet('/api/admin/users').then(function(res){var tbody=document.querySelector('#userTable tbody');if(!res.data||res.data.length===0){tbody.innerHTML='<tr><td colspan="7" style="text-align:center;color:rgba(255,255,255,0.4);">暂无数据</td></tr>';return;}tbody.innerHTML=res.data.map(function(u){return '<tr><td>'+u.id+'</td><td>'+u.username+'</td><td>'+(u.nickname||'-')+'</td><td>'+(u.phone||'-')+'</td><td>'+(u.role===1?'管理员':'用户')+'</td><td>'+(u.status===1?'正常':'禁用')+'</td><td>'+(u.id!==1?'<button class="btn btn-sm btn-warning" onclick="toggleUser('+u.id+','+(u.status===1?0:1)+')">'+(u.status===1?'禁用':'启用')+'</button>':'-')+'</td></tr>';}).join('');});}
+    function toggleUser(userId,status){var msg=status===0?'确定禁用该用户？':'确定启用该用户？';if(!confirm(msg))return;apiPost('/api/admin/user/status',{id:userId,status:status}).then(function(res){if(res.code===200){alert('操作成功');loadUsers();}else{alert(res.message);}});}
+
+    // ==================== 初始化 ====================
+    checkLogin().then(function(user){
+        var el=document.getElementById('userInfo');
+        if(user&&user.role===1){
+            el.innerHTML='<span>'+(user.nickname||user.username)+'</span><a href="javascript:logout()" style="color:rgba(255,255,255,0.7);">退出</a>';
+            loadAdminOrders();
+        } else if(user){alert('仅管理员可访问后台');window.location.href='/';}
+        else window.location.href='/pages/login.html';
+    });
+</script>
+</body>
+</html>

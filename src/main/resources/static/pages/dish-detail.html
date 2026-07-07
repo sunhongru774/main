@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>菜品主页 - 华夏美食地图</title>
+    <link rel="stylesheet" href="/css/style.css">
+    <style>
+        body { min-height: 100vh; background: #0a0a1a; }
+        .dish-hero { padding-top: 64px; min-height: 100vh; display: grid; grid-template-columns: minmax(320px, 1.05fr) minmax(320px, 0.95fr); }
+        .dish-media { position: relative; min-height: 100vh; background: #111; overflow: hidden; }
+        .dish-media img { width: 100%; height: 100%; min-height: 100vh; object-fit: cover; display: block; }
+        .dish-media::after { content: ''; position: absolute; inset: 0; background: linear-gradient(90deg, transparent 45%, #0a0a1a 100%), linear-gradient(0deg, rgba(0,0,0,0.45), transparent 42%); }
+        .dish-panel { padding: 74px 54px 46px; display: flex; flex-direction: column; justify-content: center; gap: 24px; }
+        .crumb { color: #7ee7c7; font-size: 13px; }
+        .dish-title { font-size: 52px; line-height: 1.05; color: #fff; letter-spacing: 0; }
+        .dish-desc { color: rgba(255,255,255,0.68); line-height: 1.8; font-size: 16px; max-width: 620px; }
+        .price-row { display: flex; align-items: center; justify-content: space-between; gap: 18px; padding: 18px 0; border-top: 1px solid rgba(255,255,255,0.08); border-bottom: 1px solid rgba(255,255,255,0.08); }
+        .price { color: #f6d365; font-size: 42px; font-weight: 800; }
+        .province { color: rgba(255,255,255,0.46); }
+        .detail-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+        .detail-block { background: rgba(255,255,255,0.045); border: 1px solid rgba(255,255,255,0.07); border-radius: 8px; padding: 16px; }
+        .detail-block .label { color: rgba(255,255,255,0.42); font-size: 13px; margin-bottom: 10px; }
+        .tag-list { display: flex; flex-wrap: wrap; gap: 8px; }
+        .detail-tag { display: inline-flex; align-items: center; min-height: 28px; padding: 4px 10px; border-radius: 999px; background: rgba(246,211,101,0.12); border: 1px solid rgba(246,211,101,0.2); color: #f6d365; font-size: 13px; }
+        .side-tag { background: rgba(126,231,199,0.1); border-color: rgba(126,231,199,0.2); color: #7ee7c7; }
+        .actions { display: flex; gap: 12px; flex-wrap: wrap; }
+        .back-link { color: rgba(255,255,255,0.62); border: 1px solid rgba(255,255,255,0.12); background: rgba(255,255,255,0.04); }
+        .empty-state { padding: 130px 24px; text-align: center; color: rgba(255,255,255,0.58); }
+        @media (max-width: 860px) {
+            .dish-hero { display: block; }
+            .dish-media, .dish-media img { min-height: 320px; height: 320px; }
+            .dish-media::after { background: linear-gradient(0deg, #0a0a1a 0%, transparent 70%); }
+            .dish-panel { padding: 28px 22px 42px; }
+            .dish-title { font-size: 36px; }
+            .detail-grid { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+<div class="header">
+    <a href="/" class="logo">🍜 <span>华夏美食</span>地图</a>
+    <nav>
+        <a href="/pages/ai-recommend.html">🤖 AI推荐</a>
+        <a href="/pages/cart.html">🛒 购物车</a>
+        <a href="/pages/orders.html">📋 订单</a><a href="/pages/admin.html" id="adminLink" style="display:none;">⚙️ 管理后台</a>
+        <span class="user-info" id="userInfo"></span>
+    </nav>
+</div>
+
+<main id="dishPage" class="empty-state">加载菜品中...</main>
+
+<script src="/js/api.js"></script>
+<script>
+    var currentDishId = new URLSearchParams(window.location.search).get('id');
+    var placeholder = '/images/dishes/placeholder.jpg';
+
+    function renderTags(text, className) {
+        var list = (text || '').split(',').map(function(item){ return item.trim(); }).filter(Boolean);
+        if (list.length === 0) return '<span style="color:rgba(255,255,255,0.45);">暂无</span>';
+        return list.map(function(item){ return '<span class="detail-tag ' + (className || '') + '">' + item + '</span>'; }).join('');
+    }
+
+    function loadDish() {
+        if (!currentDishId) {
+            document.getElementById('dishPage').innerHTML = '菜品不存在';
+            return;
+        }
+        apiGet('/api/dish/' + encodeURIComponent(currentDishId)).then(function(res) {
+            if (res.code !== 200 || !res.data) {
+                document.getElementById('dishPage').innerHTML = res.message || '菜品不存在';
+                return;
+            }
+            var d = res.data;
+            document.title = d.name + ' - 菜品主页';
+            document.getElementById('dishPage').className = 'dish-hero';
+            document.getElementById('dishPage').innerHTML =
+                '<section class="dish-media"><img src="' + (d.imageUrl || placeholder) + '" alt="' + d.name + '" onerror="this.src=\'' + placeholder + '\'"></section>' +
+                '<section class="dish-panel">' +
+                '<div class="crumb">' + (d.province || '餐厅') + ' · 餐厅美食主页</div>' +
+                '<h1 class="dish-title">' + d.name + '</h1>' +
+                '<p class="dish-desc">' + (d.description || '这道菜暂时没有介绍。') + '</p>' +
+                '<div class="price-row"><div><div class="price">¥' + d.price + '</div><div class="province">' + (d.province || '') + '</div></div><button class="btn btn-primary" onclick="addDishToCart()">加入购物车</button></div>' +
+                '<div class="detail-grid">' +
+                '<div class="detail-block"><div class="label">口味</div><div class="tag-list">' + renderTags(d.tasteTags, '') + '</div></div>' +
+                '<div class="detail-block"><div class="label">配菜</div><div class="tag-list">' + renderTags(d.sideDishes, 'side-tag') + '</div></div>' +
+                '</div>' +
+                '<div class="actions"><a class="btn back-link" href="/">返回地图</a><a class="btn back-link" href="/pages/cart.html">查看购物车</a></div>' +
+                '</section>';
+        });
+    }
+
+    function addDishToCart() {
+        apiPost('/api/cart/add', { dishId: parseInt(currentDishId), quantity: 1 }).then(function(res) {
+            if (res.code === 200) alert('已加入购物车');
+            else if (res.code === 401) { alert('请先登录'); window.location.href = '/pages/login.html'; }
+            else alert(res.message || '加入购物车失败');
+        });
+    }
+
+    checkLogin().then(function(user) {
+        var el = document.getElementById('userInfo');
+        updateAdminLink(user);
+        if (user) el.innerHTML = '<span>' + (user.nickname || user.username) + '</span><a href="javascript:logout()" style="color:rgba(255,255,255,0.7);">退出</a>';
+        else el.innerHTML = '<a href="/pages/login.html" style="color:rgba(255,255,255,0.7);">登录</a>';
+    });
+    loadDish();
+</script>
+</body>
+</html>

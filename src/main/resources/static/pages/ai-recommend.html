@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI智能推荐 - 华夏美食地图</title>
+    <link rel="stylesheet" href="/css/style.css">
+    <style>
+        .recommend-form{padding:24px;margin-bottom:30px;}
+        .recommend-form .form-row{display:flex;gap:16px;flex-wrap:wrap;}
+        .recommend-form .form-group{flex:1;min-width:150px;}
+        .recommend-form .btn{width:100%;padding:12px;font-size:16px;margin-top:16px;}
+        .result-area{margin-top:24px;}
+        .result-card{display:flex;align-items:center;gap:16px;background:#1a1a2e;border:1px solid rgba(255,255,255,0.06);padding:16px;border-radius:12px;margin-bottom:16px;transition:all 0.3s;}
+        .result-card:hover{border-color:rgba(246,211,101,0.15);}
+        .result-card img{width:80px;height:80px;object-fit:cover;border-radius:10px;}
+        .result-card .info{flex:1;}
+        .result-card .info h4{margin-bottom:4px;}
+        .result-card .info .reason{font-size:13px;color:rgba(255,255,255,0.5);margin-top:6px;padding:6px 12px;background:rgba(255,255,255,0.03);border-radius:8px;}
+        .result-card .price{font-size:20px;font-weight:bold;color:#f6d365;}
+        .loading{text-align:center;padding:40px;color:rgba(255,255,255,0.4);display:none;}
+        .desc{color:rgba(255,255,255,0.4);margin-bottom:24px;}
+    </style>
+</head>
+<body>
+<div class="header">
+    <a href="/" class="logo">🍜 <span>华夏美食</span>地图</a>
+    <nav>
+        <a href="/pages/ai-recommend.html">🤖 AI推荐</a>
+        <a href="/pages/cart.html">🛒 购物车</a>
+        <a href="/pages/orders.html">📋 订单</a><a href="/pages/admin.html" id="adminLink" style="display:none;">⚙️ 管理后台</a>
+        <span class="user-info" id="userInfo"></span>
+    </nav>
+</div>
+<div class="page-content">
+    <h2>🤖 智能点餐助手</h2>
+    <p class="desc">告诉我你的口味偏好和预算，AI帮你推荐最合适的菜品组合</p>
+
+    <div class="recommend-form card">
+        <div class="form-row">
+            <div class="form-group"><label>口味偏好</label><select class="form-select" id="taste"><option value="">不限</option><option value="辣">🌶️ 辣</option><option value="麻">麻</option><option value="酸甜">酸甜</option><option value="清淡">清淡</option><option value="鲜香">鲜香</option><option value="咸香">咸香</option><option value="浓郁">浓郁</option></select></div>
+            <div class="form-group"><label>人均预算(元)</label><input class="form-input" type="number" id="budget" value="50" min="10" max="500"></div>
+            <div class="form-group"><label>用餐人数</label><input class="form-input" type="number" id="people" value="2" min="1" max="20"></div>
+            <div class="form-group"><label>省份偏好(可选)</label><select class="form-select" id="province"><option value="">不限</option><option value="四川">四川</option><option value="广东">广东</option><option value="山东">山东</option><option value="江苏">江苏</option><option value="浙江">浙江</option><option value="福建">福建</option><option value="湖南">湖南</option><option value="安徽">安徽</option><option value="北京">北京</option><option value="陕西">陕西</option></select></div>
+        </div>
+        <button class="btn btn-primary" id="recommendBtn" onclick="getRecommend()">获取AI推荐</button>
+    </div>
+
+    <div class="loading" id="loading">🤔 AI正在思考推荐方案...</div>
+    <div class="result-area" id="resultArea"></div>
+</div>
+<script src="/js/api.js"></script>
+<script>
+    function getRecommend(){
+        var taste=document.getElementById('taste').value,budget=parseInt(document.getElementById('budget').value)||50,people=parseInt(document.getElementById('people').value)||2,province=document.getElementById('province').value;
+        document.getElementById('loading').style.display='block';document.getElementById('resultArea').innerHTML='';document.getElementById('recommendBtn').disabled=true;
+        apiPost('/api/ai/recommend',{taste:taste,budget:budget,peopleCount:people,province:province}).then(function(res){
+            document.getElementById('loading').style.display='none';document.getElementById('recommendBtn').disabled=false;
+            if(res.code!==200||!res.data||res.data.length===0){document.getElementById('resultArea').innerHTML='<div class="card card-body" style="text-align:center;color:rgba(255,255,255,0.4);"><p>暂无推荐结果，请调整条件重试</p></div>';return;}
+            var total=0,html='<h3 style="margin-bottom:16px;">✨ AI推荐方案</h3>';
+            res.data.forEach(function(d){total+=d.price;html+='<div class="result-card"><img src="'+(d.imageUrl||'/images/dishes/placeholder.jpg')+'" onerror="this.src=\'/images/dishes/placeholder.jpg\'"><div class="info"><h4>'+d.name+'</h4><span style="color:rgba(255,255,255,0.4);font-size:13px;">'+(d.tasteTags||'')+' · '+(d.province||'')+'</span><div class="reason">'+(d.reason||'推荐品尝')+'</div></div><div class="price">¥'+d.price+'</div></div>';});
+            html+='<div class="card card-body" style="text-align:right;font-size:18px;">预估总价: <span style="color:#f6d365;font-weight:bold;">¥'+total.toFixed(2)+'</span></div>';
+            document.getElementById('resultArea').innerHTML=html;
+        });
+    }
+    checkLogin().then(function(user){var el=document.getElementById('userInfo');updateAdminLink(user);if(user){el.innerHTML='<span>'+(user.nickname||user.username)+'</span><a href="javascript:logout()" style="color:rgba(255,255,255,0.7);">退出</a>';}else{el.innerHTML='<a href="/pages/login.html" style="color:rgba(255,255,255,0.7);">登录</a>';}});
+</script>
+</body>
+</html>
