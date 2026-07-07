@@ -95,7 +95,7 @@
         });
     }
     function loadOrderItems(orderId){apiGet('/api/order/'+orderId).then(function(res){if(res.code!==200||!res.data)return;var el=document.getElementById('items-'+orderId);if(!el)return;el.innerHTML=(res.data.items||[]).map(function(i){return '<div class="order-item"><img src="'+(i.dishImage||'/images/dishes/placeholder.jpg')+'" onerror="this.src=\'/images/dishes/placeholder.jpg\'"><div class="info"><span class="name">'+i.dishName+'</span><span class="meta">¥'+i.price+' × '+i.quantity+'</span></div><div><strong style="color:#f6d365;">¥'+i.subtotal+'</strong></div></div>';}).join('');});}
-    function updateOrder(orderId,status){var msg=status===5?'确定要取消订单吗？':'确认支付？';if(!confirm(msg))return;apiPost('/api/order/status',{orderId:orderId,status:status}).then(function(res){if(res.code===200){alert('操作成功');loadOrders();}else{alert(res.message||'操作失败');}});}
+    function updateOrder(orderId,status){var msg=status===5?'确定要取消订单吗？':'确认支付？';showConfirm(msg,function(r){if(!r)return;apiPost('/api/order/status',{orderId:orderId,status:status}).then(function(res){if(res.code===200){showAlert('操作成功');loadOrders();}else{showAlert(res.message||'操作失败');}});});}
 
     checkLogin().then(function(user){
         var el=document.getElementById('userInfo');

@@ -147,13 +147,18 @@
 
     function adminOrderStatus(orderId,status){
         var msg={1:'确认收到支付？',2:'确认接单？',3:'确认已上菜？（系统将通知用户）',4:'标记为已完成？'};
-        if(!confirm(msg[status]||'确认操作？')) return;
-        apiPost('/api/admin/order/status',{id:orderId,status:status}).then(function(res){
-            if(res.code===200){if(status===3)alert('✅ 已通知用户：订单已上菜');loadAdminOrders();}
-            else alert(res.message||'操作失败');
+        showConfirm(msg[status]||'确认操作？', function(r){
+            if(!r) return;
+            apiPost('/api/admin/order/status',{id:orderId,status:status}).then(function(res){
+                if(res.code===200){
+                    if(status===3) showAlert('✅ 已通知用户：订单已上菜');
+                    loadAdminOrders();
+                } else {
+                    showAlert(res.message||'操作失败');
+                }
+            });
         });
     }
-
     // ==================== 收益统计 ====================
     function loadRevenue(){
         apiGet('/api/admin/revenue').then(function(res){
@@ -166,31 +171,26 @@
     }
 
     // ==================== 菜品管理 ====================
-    function loadDishes(){apiGet('/api/admin/dishes').then(function(res){if(res.code===403){alert('无权访问');return;}var tbody=document.querySelector('#dishTable tbody');if(!res.data||res.data.length===0){tbody.innerHTML='<tr><td colspan="8" style="text-align:center;color:rgba(255,255,255,0.4);">暂无数据</td></tr>';return;}tbody.innerHTML=res.data.map(function(d){var actions='<button class="btn btn-sm btn-outline" onclick="editDish('+d.id+')">编辑</button> ';if(d.status===1){actions+='<button class="btn btn-sm btn-danger" onclick="deleteDish('+d.id+')">下架</button>';}else{actions+='<button class="btn btn-sm btn-success" onclick="enableDish('+d.id+')">上架</button>';}return '<tr><td>'+d.id+'</td><td>'+d.name+'</td><td>¥'+d.price+'</td><td>'+(d.province||'-')+'</td><td>'+(d.tasteTags||'-')+'</td><td>'+(d.status===1?'上架':'下架')+'</td><td>'+d.salesCount+'</td><td>'+actions+'</td></tr>';}).join('');});}
+    function loadDishes(){apiGet('/api/admin/dishes').then(function(res){if(res.code===403){showAlert('无权访问');return;}var tbody=document.querySelector('#dishTable tbody');if(!res.data||res.data.length===0){tbody.innerHTML='<tr><td colspan="8" style="text-align:center;color:rgba(255,255,255,0.4);">暂无数据</td></tr>';return;}tbody.innerHTML=res.data.map(function(d){var actions='<button class="btn btn-sm btn-outline" onclick="editDish('+d.id+')">编辑</button> ';if(d.status===1){actions+='<button class="btn btn-sm btn-danger" onclick="deleteDish('+d.id+')">下架</button>';}else{actions+='<button class="btn btn-sm btn-success" onclick="enableDish('+d.id+')">上架</button>';}return '<tr><td>'+d.id+'</td><td>'+d.name+'</td><td>¥'+d.price+'</td><td>'+(d.province||'-')+'</td><td>'+(d.tasteTags||'-')+'</td><td>'+(d.status===1?'上架':'下架')+'</td><td>'+d.salesCount+'</td><td>'+actions+'</td></tr>';}).join('');});}
     function editDish(id){editingDishId=id;apiGet('/api/dish/'+id).then(function(res){if(res.code!==200)return;var d=res.data;document.getElementById('dishModalTitle').textContent='编辑菜品';document.getElementById('f_name').value=d.name||'';document.getElementById('f_price').value=d.price||'';document.getElementById('f_province').value=d.province||'';document.getElementById('f_category').value=d.categoryId||'';document.getElementById('f_taste').value=d.tasteTags||'';document.getElementById('f_desc').value=d.description||'';document.getElementById('f_sides').value=d.sideDishes||'';document.getElementById('f_image').value=d.imageUrl||'';document.getElementById('dishModal').classList.add('active');});}
     function showDishForm(){editingDishId=null;document.getElementById('dishModalTitle').textContent='新增菜品';['f_name','f_price','f_province','f_category','f_taste','f_desc','f_sides','f_image'].forEach(function(id){document.getElementById(id).value='';});document.getElementById('dishModal').classList.add('active');}
     function closeDishModal(){document.getElementById('dishModal').classList.remove('active');}
-    function saveDish(){var data={id:editingDishId,name:document.getElementById('f_name').value.trim(),price:parseFloat(document.getElementById('f_price').value)||0,province:document.getElementById('f_province').value,categoryId:parseInt(document.getElementById('f_category').value)||null,tasteTags:document.getElementById('f_taste').value.trim(),description:document.getElementById('f_desc').value.trim(),sideDishes:document.getElementById('f_sides').value.trim(),imageUrl:document.getElementById('f_image').value.trim(),status:1};if(!data.name){alert('请输入菜品名称');return;}if(!data.imageUrl) delete data.imageUrl;apiPost('/api/admin/dish/save',data).then(function(res){if(res.code===200){alert('保存成功');closeDishModal();loadDishes();}else{alert(res.message||'保存失败');}});}
-    function deleteDish(id){if(!confirm('确认下架该菜品？'))return;apiPost('/api/admin/dish/delete',{id:id}).then(function(res){if(res.code===200){alert('已下架');loadDishes();}else{alert(res.message);}});}
-    function enableDish(id){apiPost('/api/admin/dish/enable',{id:id}).then(function(res){if(res.code===200){alert('已上架');loadDishes();}else{alert(res.message);}});}
+    function saveDish(){var data={id:editingDishId,name:document.getElementById('f_name').value.trim(),price:parseFloat(document.getElementById('f_price').value)||0,province:document.getElementById('f_province').value,categoryId:parseInt(document.getElementById('f_category').value)||null,tasteTags:document.getElementById('f_taste').value.trim(),description:document.getElementById('f_desc').value.trim(),sideDishes:document.getElementById('f_sides').value.trim(),imageUrl:document.getElementById('f_image').value.trim(),status:1};if(!data.name){showAlert('请输入菜品名称');return;}if(!data.imageUrl) delete data.imageUrl;apiPost('/api/admin/dish/save',data).then(function(res){if(res.code===200){showAlert('保存成功');closeDishModal();loadDishes();}else{showAlert(res.message||'保存失败');}});}
+    function deleteDish(id){showConfirm('确认下架该菜品？',function(r){if(!r)return;apiPost('/api/admin/dish/delete',{id:id}).then(function(res){if(res.code===200){showAlert('已下架');loadDishes();}else{showAlert(res.message);}});});}
+    function enableDish(id){apiPost('/api/admin/dish/enable',{id:id}).then(function(res){if(res.code===200){showAlert('已上架');loadDishes();}else{showAlert(res.message);}});}
 
     // ==================== 用户管理 ====================
     function loadUsers(){apiGet('/api/admin/users').then(function(res){var tbody=document.querySelector('#userTable tbody');if(!res.data||res.data.length===0){tbody.innerHTML='<tr><td colspan="7" style="text-align:center;color:rgba(255,255,255,0.4);">暂无数据</td></tr>';return;}tbody.innerHTML=res.data.map(function(u){return '<tr><td>'+u.id+'</td><td>'+u.username+'</td><td>'+(u.nickname||'-')+'</td><td>'+(u.phone||'-')+'</td><td>'+(u.role===1?'管理员':'用户')+'</td><td>'+(u.status===1?'正常':'禁用')+'</td><td>'+(u.id!==1?'<button class="btn btn-sm btn-warning" onclick="toggleUser('+u.id+','+(u.status===1?0:1)+')">'+(u.status===1?'禁用':'启用')+'</button>':'-')+'</td></tr>';}).join('');});}
-    function toggleUser(userId,status){var msg=status===0?'确定禁用该用户？':'确定启用该用户？';if(!confirm(msg))return;apiPost('/api/admin/user/status',{id:userId,status:status}).then(function(res){if(res.code===200){alert('操作成功');loadUsers();}else{alert(res.message);}});}
+    function toggleUser(userId,status){var msg=status===0?'确定禁用该用户？':'确定启用该用户？';showConfirm(msg,function(r){if(!r)return;apiPost('/api/admin/user/status',{id:userId,status:status}).then(function(res){if(res.code===200){showAlert('操作成功');loadUsers();}else{showAlert(res.message);}});});}
 
     // ==================== 初始化 ====================
     checkLogin().then(function(user){
-        var el=document.getElementById('userInfo');
-        updateAdminLink(user);
+        var el=document.getElementById("userInfo");
         if(user&&user.role===1){
-            el.innerHTML='<span>'+(user.nickname||user.username)+'</span><a href="/pages/user.html" style="color:rgba(255,255,255,0.7);">个人中心</a> <a href="javascript:logout()" style="color:rgba(255,255,255,0.7);">退出</a>';
+            el.innerHTML='<span>'+(user.nickname||user.username)+'</span><a href="javascript:logout()" style="color:rgba(255,255,255,0.7);">退出</a>';
             loadAdminOrders();
-        } else if(user){
-            alert('仅管理员可访问后台');
-            window.location.href='/';
-        } else {
-            window.location.href='/pages/login.html';
-        }
+        } else if(user){alert('仅管管间员访闻台台句态');window.location.href="/";}
+        else window.location.href="/pages/login.html";
     });
 </script>
 </body>
