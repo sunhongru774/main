@@ -4,8 +4,12 @@ a { text-decoration: none; color: #f6d365; }
 .container { max-width: 1200px; margin: 0 auto; padding: 0 15px; }
 .header { background: rgba(10,10,26,0.9); backdrop-filter: blur(10px); padding: 0 30px; height: 64px; display: flex; align-items: center; justify-content: space-between; position: fixed; top: 0; left: 0; right: 0; z-index: 1000; border-bottom: 1px solid rgba(255,255,255,0.06); }
 .header .logo { font-size: 22px; font-weight: bold; color: #fff; display: flex; align-items: center; gap: 8px; cursor: pointer; }
-.header .logo span { background: linear-gradient(135deg, #f6d365, #fda085, #e74c3c); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
-.header nav { display: flex; align-items: center; gap: 24px; }
+.header .logo span {
+    color: #ffffff;
+    background: none;
+    -webkit-background-clip: unset;
+    -webkit-text-fill-color: unset;
+}.header nav { display: flex; align-items: center; gap: 24px; }
 .header nav a { color: rgba(255,255,255,0.7); margin-left: 0; font-size: 14px; transition: all 0.3s; position: relative; }
 .header nav a:hover { color: #f6d365; }
 .header nav a::after { content: ''; position: absolute; bottom: -4px; left: 0; width: 0; height: 2px; background: linear-gradient(90deg, #f6d365, #fda085); transition: width 0.3s; }

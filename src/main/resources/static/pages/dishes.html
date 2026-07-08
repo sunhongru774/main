@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>全部菜品 - 华夏美食地图</title>
+    <title>全部菜品 - 餐厅点餐与评价系统</title>
     <link rel="stylesheet" href="/css/style.css">
     <style>
         body { min-height: 100vh; background: #0a0a1a; }
@@ -21,41 +21,160 @@
         .dish-card .info .price { color: #f6d365; font-size: 18px; font-weight: bold; }
         .card-body { background: #1a1a2e; border: 1px solid rgba(255,255,255,0.06); border-radius: 12px; padding: 30px; text-align: center; color: rgba(255,255,255,0.4); }
         .card-body p { margin-bottom: 8px; }
+
+        /* 双栏布局与侧边栏 */
+        .dishes-page.flex-layout { display: flex; max-width: 1400px; margin: 0 auto; padding: 80px 20px 40px; min-height: calc(100vh - 64px); gap: 24px; }
+        .dishes-sidebar { width: 200px; background: #1a1a2e; border: 1px solid rgba(255,255,255,0.06); border-radius: 12px; padding: 16px 0; flex-shrink: 0; position: sticky; top: 84px; height: fit-content; max-height: calc(100vh - 100px); overflow-y: auto; }
+        .dishes-sidebar::-webkit-scrollbar { width: 3px; }
+        .dishes-sidebar::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 10px; }
+
+        /* 左侧导航项 */
+        .dishes-sidebar .sidebar-header { padding: 0 20px 12px; font-size: 15px; font-weight: bold; color: #fff; border-bottom: 1px solid rgba(255,255,255,0.06); margin-bottom: 8px; }
+        .dishes-sidebar .province-item { display: block; padding: 10px 20px; color: rgba(255,255,255,0.6); transition: all 0.3s; cursor: pointer; font-size: 14px; border-left: 2px solid transparent; text-decoration: none; }
+        .dishes-sidebar .province-item:hover { background: rgba(255,255,255,0.03); color: #f6d365; }
+        .dishes-sidebar .province-item.active { background: rgba(246,211,101,0.06); color: #f6d365; border-left-color: #f6d365; }
+
+        /* 右侧主区域 */
+        .dishes-main { flex: 1; min-width: 0; }
+        .dishes-main .main-header { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px; margin-bottom: 24px; }
+        .dishes-main .main-header h2 { margin: 0; font-size: 24px; }
+        .dishes-main .search-bar { flex: 0 1 350px; margin: 0; }
+        .dishes-main .search-bar input { flex: 1; }
     </style>
 </head>
-<body><div class="header"><a href="/" class="logo">🍜 <span>华夏美食</span>地图</a><nav>
-        <a href="/pages/dishes.html">🍽️ 全部菜品</a><a href="/pages/ai-recommend.html">🤖 AI推荐</a><a href="/pages/cart.html">🛒 购物车</a><a href="/pages/orders.html">📋 订单</a><a href="/pages/admin.html" id="adminLink" style="display:none;">⚙️ 管理后台</a>
+<body><div class="header"><a href="/" class="logo"> <span>餐厅点餐与评价系统</span></a><nav>
+        <a href="/pages/dishes.html">全部菜品</a><a href="/pages/ai-recommend.html">AI推荐</a><a href="/pages/cart.html">购物车</a><a href="/pages/orders.html">订单</a><a href="/pages/admin.html" id="adminLink" style="display:none;">管理后台</a>
         <span class="user-info" id="userInfo"></span>
         </nav></div>
-<div class="dishes-page">
-    <h2 style="margin-bottom:8px;">全部菜品</h2>
-    <p style="color:rgba(255,255,255,0.4);margin-bottom:20px;">浏览所有菜品，点击可查看详情</p>
-    <div class="search-bar"><input class="form-input" id="searchInput" placeholder="搜索菜品名称、省份、口味..." oninput="searchDishes()"><button class="btn btn-primary" onclick="searchDishes()">搜索</button></div>
-    <div class="dish-grid" id="dishGrid"></div>
+<div class="dishes-page flex-layout">
+    <!-- 左侧导航栏 -->
+    <div class="dishes-sidebar">
+        <div class="sidebar-header">省份分类</div>
+        <div id="provinceList" class="sidebar-nav">
+            <a class="province-item active" data-province="all">全部菜品</a>
+        </div>
+    </div>
+
+    <div class="dishes-main">
+        <div class="main-header">
+            <h2 id="currentProvinceTitle">全部菜品</h2>
+            <div class="search-bar">
+                <input class="form-input" id="searchInput" placeholder="搜索菜品名称..." oninput="searchDishes()">
+                <button class="btn btn-primary" onclick="searchDishes()">搜索</button>
+            </div>
+        </div>
+        <div class="dish-grid" id="dishGrid"></div>
+    </div>
 </div>
 <script src="/js/api.js"></script>
 <script>
-var placeholder='/images/dishes/placeholder.jpg';
-function goToDish(id){window.location.href='/pages/dish-detail.html?id='+encodeURIComponent(id);}
-function handleImgError(img){img.onerror=null;img.src='/images/dishes/placeholder.jpg';}
-function searchDishes(){
-var kw=document.getElementById('searchInput').value.trim();
-var url='/api/dish/list';
-if(kw)url+='?keyword='+encodeURIComponent(kw);
-apiGet(url).then(function(res){
-var g=document.getElementById('dishGrid');
-if(!res.data||res.data.length===0){g.innerHTML='<div class="card-body" style="grid-column:1/-1;"><p>没有找到相关菜品</p><p style="font-size:13px;">试试其他关键词</p></div>';return;}
-g.innerHTML=res.data.map(function(d){
-var img=d.imageUrl||placeholder;
-return '<div class="dish-card" onclick="goToDish('+d.id+')"><div class="img-wrap"><img src="'+img+'" alt="'+d.name+'" onerror="handleImgError(this)"></div><div class="info"><h3>'+d.name+'</h3><div class="meta">'+(d.province||'')+(d.tasteTags?' - '+d.tasteTags:'')+'</div><div class="price">￥'+d.price+'</div></div></div>';
-}).join('');});}
-checkLogin().then(function(user){
-        var el=document.getElementById('userInfo');
+    var placeholder = '/images/dishes/placeholder.jpg';
+    var allDishes = [];       // 存储全部菜品数据
+    var currentProvince = 'all'; // 当前选中的省份（默认全部）
+
+    function goToDish(id){ window.location.href = '/pages/dish-detail.html?id=' + encodeURIComponent(id); }
+    function handleImgError(img){ img.onerror = null; img.src = '/images/dishes/placeholder.jpg'; }
+
+    // 1. 核心渲染函数：根据 currentProvince 渲染菜品
+    function renderDishes() {
+        var grid = document.getElementById('dishGrid');
+        var title = document.getElementById('currentProvinceTitle');
+
+        // 筛选菜品
+        var filtered = currentProvince === 'all'
+            ? allDishes
+            : allDishes.filter(function(d) { return d.province === currentProvince; });
+
+        // 更新标题
+        title.textContent = currentProvince === 'all' ? '全部菜品' : currentProvince + ' 菜品';
+
+        if (filtered.length === 0) {
+            grid.innerHTML = '<div class="card-body" style="grid-column:1/-1;"><p>暂无相关菜品</p><p style="font-size:13px;">试试其他省份</p></div>';
+            return;
+        }
+
+        grid.innerHTML = filtered.map(function(d) {
+            var img = d.imageUrl || placeholder;
+            return '<div class="dish-card" onclick="goToDish(' + d.id + ')"><div class="img-wrap"><img src="' + img + '" alt="' + d.name + '" onerror="handleImgError(this)"></div><div class="info"><h3>' + d.name + '</h3><div class="meta">' + (d.province || '') + (d.tasteTags ? ' - ' + d.tasteTags : '') + '</div><div class="price">￥' + d.price + '</div></div></div>';
+        }).join('');
+    }
+
+    // 2. 切换省份
+    function switchProvince(provinceName, el) {
+        currentProvince = provinceName;
+        // 更新左侧菜单高亮
+        document.querySelectorAll('.province-item').forEach(function(a) { a.classList.remove('active'); });
+        if (el) el.classList.add('active');
+
+        // 同时清空搜索框（防止搜完再点省份造成逻辑混乱）
+        document.getElementById('searchInput').value = '';
+        renderDishes();
+    }
+
+    // 3. 搜索逻辑（基于当前省份）
+    function searchDishes() {
+        var kw = document.getElementById('searchInput').value.trim();
+        if (kw) {
+            // 如果有搜索词，自动切换为“全部”，再过滤
+            if (currentProvince !== 'all') {
+                currentProvince = 'all';
+                document.querySelectorAll('.province-item').forEach(function(a) {
+                    a.classList.remove('active');
+                    if (a.dataset.province === 'all') a.classList.add('active');
+                });
+                document.getElementById('currentProvinceTitle').textContent = '全部菜品';
+            }
+
+            var grid = document.getElementById('dishGrid');
+            var filtered = allDishes.filter(function(d) {
+                return d.name.indexOf(kw) !== -1 || (d.province && d.province.indexOf(kw) !== -1);
+            });
+            if(filtered.length === 0) {
+                grid.innerHTML = '<div class="card-body" style="grid-column:1/-1;"><p>没有找到相关菜品</p><p style="font-size:13px;">试试其他关键词</p></div>';
+            } else {
+                grid.innerHTML = filtered.map(function(d) {
+                    var img = d.imageUrl || placeholder;
+                    return '<div class="dish-card" onclick="goToDish(' + d.id + ')"><div class="img-wrap"><img src="' + img + '" alt="' + d.name + '" onerror="handleImgError(this)"></div><div class="info"><h3>' + d.name + '</h3><div class="meta">' + (d.province || '') + (d.tasteTags ? ' - ' + d.tasteTags : '') + '</div><div class="price">￥' + d.price + '</div></div></div>';
+                }).join('');
+            }
+        } else {
+            renderDishes(); // 清空搜索框后恢复当前省份列表
+        }
+    }
+
+    // 4. 初始化页面数据（合并加载省份与菜品）
+    function initPage() {
+        // 请求省份列表，生成侧边栏
+        apiGet('/api/province/list').then(function(res) {
+            if (res.code === 200 && res.data) {
+                var listEl = document.getElementById('provinceList');
+                var html = '<a class="province-item active" data-province="all" onclick="switchProvince(\'all\', this)">全部菜品</a>';
+                res.data.forEach(function(p) {
+                    var pName = p.provinceName;
+                    html += '<a class="province-item" data-province="' + pName + '" onclick="switchProvince(\'' + pName + '\', this)"> ' + pName + '</a>';
+                });
+                listEl.innerHTML = html;
+            }
+        });
+
+        // 请求全部菜品，并触发首次渲染
+        apiGet('/api/dish/list').then(function(res) {
+            if (res.code === 200 && res.data) {
+                allDishes = res.data; // 保存所有菜品到全局变量
+                renderDishes();       // 触发渲染
+            }
+        });
+    }
+
+    // 5. 登录状态检查（保持不变）
+    checkLogin().then(function(user){
+        var el = document.getElementById('userInfo');
         updateAdminLink(user);
         if(user){
             el.innerHTML='<span>'+(user.nickname||user.username)+'</span><a href="/pages/user.html" style="color:rgba(255,255,255,0.7);">个人中心</a> <a href="javascript:logout()" style="color:rgba(255,255,255,0.7);">退出</a>';
         }else{
             el.innerHTML='<a href="/pages/login.html" style="color:rgba(255,255,255,0.7);">登录</a>';
         }
-    });searchDishes();
+        initPage(); // 替换原来的 searchDishes()
+    });
 </script></body></html>

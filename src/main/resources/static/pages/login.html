@@ -3,13 +3,18 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>登录 - 华夏美食地图</title>
+    <title>登录 - 餐厅点餐与评价系统</title>
     <link rel="stylesheet" href="/css/style.css">
     <style>
         .login-page { display: flex; justify-content: center; align-items: center; min-height: 100vh; background: #0a0a1a; }
         .login-box { background: #1a1a2e; border: 1px solid rgba(255,255,255,0.06); padding: 40px; border-radius: 16px; width: 380px; max-width: 90%; }
         .login-box h2 { text-align: center; margin-bottom: 6px; font-size: 24px; }
-        .login-box h2 span { background: linear-gradient(135deg, #f6d365, #fda085, #e74c3c); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .login-box h2 span {
+            color: #ffffff;
+            background: none;
+            -webkit-background-clip: unset;
+            -webkit-text-fill-color: unset;
+        }
         .login-box .subtitle { text-align: center; color: rgba(255,255,255,0.4); margin-bottom: 28px; font-size: 14px; }
         .tabs { display: flex; margin-bottom: 24px; border-bottom: 1px solid rgba(255,255,255,0.06); }
         .tabs a { flex: 1; text-align: center; padding: 12px; color: rgba(255,255,255,0.5); cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -1px; transition: all 0.3s; }
@@ -28,16 +33,16 @@
 </head>
 <body>
 <div class="header">
-    <a href="/" class="logo">🍜 <span>华夏美食</span>地图</a>
+    <a href="/" class="logo"> <span>餐厅点餐与评价系统</span></a>
     <nav>
-        <a href="/pages/dishes.html">🍽️ 全部菜品</a><a href="/pages/ai-recommend.html">🤖 AI推荐</a><a href="/pages/cart.html">🛒 购物车</a><a href="/pages/orders.html">📋 订单</a><a href="/pages/admin.html" id="adminLink" style="display:none;">⚙️ 管理后台</a>
+        <a href="/pages/dishes.html">全部菜品</a><a href="/pages/ai-recommend.html">AI推荐</a><a href="/pages/cart.html">购物车</a><a href="/pages/orders.html">订单</a><a href="/pages/admin.html" id="adminLink" style="display:none;">管理后台</a>
         <span class="user-info" id="userInfo"><a href="/pages/login.html">登录</a></span>
     </nav>
 </div>
 <div class="login-page">
     <div class="login-box">
-        <h2>🍜 <span>华夏美食</span>地图</h2>
-        <p class="subtitle">登录以探索中华美食</p>
+        <h2><span>餐厅点餐与评价系统</span></h2>
+        <p class="subtitle">登录以点餐</p>
         <div class="tabs">
             <a class="active" onclick="switchTab('login')">登录</a>
             <a onclick="switchTab('register')">注册</a>

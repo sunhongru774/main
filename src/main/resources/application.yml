@@ -20,6 +20,13 @@ mybatis-plus:
     log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
 
 deepseek:
-  api-key: sk-f926a174b90e43b4b35346570921e6d0
+  api-key: sk-5e978b0c18a5473999af4af3cfc3d2f6
   api-url: https://api.deepseek.com/chat/completions
   model: deepseek-chat
+
+restaurant:
+  name: 餐厅点餐与评价系统
+  address: QUST
+  phone: 010-8888-8888
+  hours: 11:00-22:00（周一至周日）
+  description: 一家汇聚中华八大菜系的特色餐厅，提供川、粤、鲁、苏、浙、闽、湘、徽等各地美食

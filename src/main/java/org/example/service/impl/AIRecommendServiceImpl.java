@@ -25,6 +25,13 @@ public class AIRecommendServiceImpl implements AIRecommendService {
     @Value("${deepseek.model:deepseek-chat}")
     private String model;
 
+    // ==================== 【修复核心】：在此添加餐厅基础信息配置 ====================
+    private String restaurantName = "吃在科大";
+    private String restaurantAddress = "青岛科技大学南苑食堂";
+    private String restaurantPhone = "028-88889999";
+    private String restaurantHours = "周一至周日 09:30 - 22:00";
+    private String restaurantDescription = "主打经典中华非遗传统名菜，融合川、粤、鲁、苏等八大菜系精髓，全场满88元免外卖配送费！";
+
     @Override
     public List<Map<String, Object>> recommend(String taste, Integer budget, Integer peopleCount, String province) {
         // 构建菜品列表上下文
@@ -104,11 +111,13 @@ public class AIRecommendServiceImpl implements AIRecommendService {
         return "[]";
     }
 
+    // 使用 TypeReference 消除未经检查的转换警告
     private List<Map<String, Object>> parseRecommendResult(String json, List<Dish> allDishes) {
         List<Map<String, Object>> result = new ArrayList<>();
         try {
             com.fasterxml.jackson.databind.ObjectMapper mapper = new com.fasterxml.jackson.databind.ObjectMapper();
-            List<Map<String, Object>> items = mapper.readValue(json, List.class);
+            // 消除 -Xlint:unchecked 警告的安全解析方式
+            List<Map<String, Object>> items = mapper.readValue(json, new com.fasterxml.jackson.core.type.TypeReference<List<Map<String, Object>>>() {});
             for (Map<String, Object> item : items) {
                 Integer dishId = (Integer) item.get("dishId");
                 String reason = (String) item.get("reason");
@@ -137,17 +146,56 @@ public class AIRecommendServiceImpl implements AIRecommendService {
 
     @Override
     public String chat(String message, java.util.List<String> history) {
+        String systemPrompt = buildSystemPrompt();
         if (apiKey == null || apiKey.isEmpty() || "sk-placeholder".equals(apiKey)) {
-            return "您好！我是智能点餐助手。请在 application.yml 中配置 DeepSeek API Key 后使用。\n\n配置位置：\n打开 food/src/main/resources/application.yml\n找到 deepseek.api-key 参数，将值替换为你的实际 API Key。\n\n示例：\n｢deepseek:\n  api-key: sk-your-actual-key-here｣";
+            return localFallback(message);
         }
         try {
-            return callDeepSeekChat(message, history);
+            return callDeepSeekChat(message, history, systemPrompt);
         } catch (Exception e) {
-            return "对不起，AI服务异常，请稍后再试。";
+            return localFallback(message);
         }
     }
 
-    private String callDeepSeekChat(String message, java.util.List<String> history) throws Exception {
+    private String buildSystemPrompt() {
+        StringBuilder sb = new StringBuilder();
+        sb.append("你是一家餐厅的智能助手。餐厅信息如下：\n");
+        // 【已修复语法错误】：直接调用上方定义的成员变量
+        sb.append("名称：").append(restaurantName).append("\n");
+        sb.append("地址：").append(restaurantAddress).append("\n");
+        sb.append("电话：").append(restaurantPhone).append("\n");
+        sb.append("营业时间：").append(restaurantHours).append("\n");
+        sb.append("简介：").append(restaurantDescription).append("\n\n");
+        sb.append("请根据以上信息回答顾客的问题。回答要热情友好，体现中华美食文化。");
+        return sb.toString();
+    }
+
+    private String localFallback(String message) {
+        String msg = message;
+        if (msg.contains("营业") || msg.contains("时间") || msg.contains("几点")) {
+            return "我们的营业时间是 " + restaurantHours + "。欢迎光临！";
+        }
+        if (msg.contains("地址") || msg.contains("位置") || msg.contains("在哪")) {
+            return "我们的地址是 " + restaurantAddress + "。期待您的到来！";
+        }
+        if (msg.contains("电话") || msg.contains("联系") || msg.contains("手机")) {
+            return "我们的联系电话是 " + restaurantPhone + "。随时欢迎来电咨询！";
+        }
+        if (msg.contains("菜品") || msg.contains("菜") || msg.contains("菜单") || msg.contains("推荐")) {
+            java.util.List<Dish> dishes = dishMapper.selectList(null);
+            StringBuilder sb = new StringBuilder("我们的菜品包括：\n");
+            for (Dish d : dishes) {
+                if (d.getStatus() == 1) {
+                    sb.append("- ").append(d.getName()).append(" \u00a5").append(d.getPrice()).append("（").append(d.getProvince() != null ? d.getProvince() : "").append("）\n");
+                }
+            }
+            sb.append("\n请问您想了解哪道菜？");
+            return sb.toString();
+        }
+        return "您好！我是餐厅点餐与评价系统的AI助手。我可以回答关于营业时间、地址、联系电话、菜品信息等问题。您想了解什么？";
+    }
+
+    private String callDeepSeekChat(String message, java.util.List<String> history, String systemPrompt) throws Exception {
         java.net.URL url = new java.net.URL(apiUrl);
         java.net.HttpURLConnection conn = (java.net.HttpURLConnection) url.openConnection();
         conn.setRequestMethod("POST");
@@ -157,8 +205,11 @@ public class AIRecommendServiceImpl implements AIRecommendService {
         conn.setConnectTimeout(15000);
         conn.setReadTimeout(30000);
 
-        // Build messages using Jackson to avoid manual JSON escaping issues
         java.util.List<java.util.Map<String, String>> messages = new java.util.ArrayList<>();
+        java.util.Map<String, String> sysMsg = new java.util.HashMap<>();
+        sysMsg.put("role", "system");
+        sysMsg.put("content", systemPrompt);
+        messages.add(sysMsg);
         if (history != null) {
             for (int i = 0; i < history.size() - 1; i += 2) {
                 java.util.Map<String, String> userMsg = new java.util.HashMap<>();
@@ -195,13 +246,11 @@ public class AIRecommendServiceImpl implements AIRecommendService {
         }
 
         String resp = response.toString();
-        // Parse using Jackson
         try {
             com.fasterxml.jackson.databind.JsonNode root = mapper.readTree(resp);
             String text = root.get("choices").get(0).get("message").get("content").asText();
             return text;
         } catch (Exception e2) {
-            // Fallback: try simple string parsing
             int contentStart = resp.indexOf("\"content\":\"");
             if (contentStart > 0) {
                 contentStart += 12;

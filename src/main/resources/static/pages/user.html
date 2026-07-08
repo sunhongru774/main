@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>个人中心 - 华夏美食地图</title>
+    <title>个人中心 - 餐厅点餐与评价系统</title>
     <link rel="stylesheet" href="/css/style.css">
     <style>
         body { min-height: 100vh; background: #0a0a1a; }
@@ -23,15 +23,15 @@
 </head>
 <body>
 <div class="header">
-    <a href="/" class="logo">🍜 <span>华夏美食</span>地图</a>
+    <a href="/" class="logo"> <span>餐厅点餐与评价系统</span></a>
     <nav>
-        <a href="/pages/dishes.html">🍽️ 全部菜品</a><a href="/pages/ai-recommend.html">🤖 AI推荐</a><a href="/pages/cart.html">🛒 购物车</a><a href="/pages/orders.html">📋 订单</a><a href="/pages/admin.html" id="adminLink" style="display:none;">⚙️ 管理后台</a>
+        <a href="/pages/dishes.html">全部菜品</a><a href="/pages/ai-recommend.html">AI推荐</a><a href="/pages/cart.html">🛒 购物车</a><a href="/pages/orders.html">订单</a><a href="/pages/admin.html" id="adminLink" style="display:none;">管理后台</a>
         <span class="user-info" id="userInfo"></span>
     </nav>
 </div>
 <div class="profile-page" id="profilePage">
     <div class="profile-card" id="userInfoCard">
-        <h2>👤 账号信息</h2>
+        <h2>账号信息</h2>
         <div class="info-row"><span class="label">用户名</span><span class="value" id="pUsername">加载中...</span></div>
         <div class="info-row"><span class="label">昵称</span><span class="value" id="pNickname">加载中...</span></div>
         <div class="info-row"><span class="label">手机号</span><span class="value" id="pPhone">加载中...</span></div>
@@ -39,7 +39,7 @@
     </div>
 
     <div class="profile-card">
-        <h2>✏️ 编辑个人信息</h2>
+        <h2>编辑个人信息</h2>
         <form onsubmit="updateProfile(event)">
             <div class="form-group"><label>昵称</label><input class="form-input" id="editNickname" placeholder="请输入昵称"></div>
             <div class="form-group"><label>手机号</label><input class="form-input" id="editPhone" placeholder="请输入手机号"></div>
@@ -48,7 +48,7 @@
     </div>
 
     <div class="profile-card">
-        <h2>🔑 修改密码</h2>
+        <h2>修改密码</h2>
         <form onsubmit="changePwd(event)">
             <div class="form-group"><label>原密码</label><input class="form-input" type="password" id="oldPwd" required placeholder="请输入原密码"></div>
             <div class="form-group"><label>新密码（至少6位）</label><input class="form-input" type="password" id="newPwd" required minlength="6" placeholder="请输入新密码"></div>

@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>管理后台 - 华夏美食地图</title>
+    <title>管理后台 - 餐厅点餐与评价系统</title>
     <link rel="stylesheet" href="/css/style.css">
     <style>
         .admin-page{display:flex;min-height:calc(100vh - 64px);padding-top:64px;}
@@ -37,47 +37,47 @@
 </head>
 <body>
 <div class="header">
-    <a href="/" class="logo">🍜 <span>华夏美食</span>地图</a>
+    <a href="/" class="logo"> <span>餐厅点餐与评价系统</span></a>
     <nav>
-        <a href="/pages/dishes.html">🍽️ 全部菜品</a><a href="/pages/ai-recommend.html">🤖 AI推荐</a><a href="/pages/cart.html">🛒 购物车</a><a href="/pages/orders.html">📋 订单</a><a href="/pages/admin.html" id="adminLink" style="display:none;">⚙️ 管理后台</a>
+        <a href="/pages/dishes.html">全部菜品</a><a href="/pages/ai-recommend.html">AI推荐</a><a href="/pages/cart.html">购物车</a><a href="/pages/orders.html">订单</a><a href="/pages/admin.html" id="adminLink" style="display:none;">管理后台</a>
         <span class="user-info" id="userInfo"></span>
     </nav>
 </div>
 <div class="admin-page">
     <div class="admin-sidebar">
-        <a class="active" onclick="switchPage('orders-admin')">📦 订单管理</a>
-        <a onclick="switchPage('revenue')">💰 本月收益</a>
-        <a onclick="switchPage('dishes')">📋 菜品管理</a>
-        <a onclick="switchPage('users')">👥 用户管理</a>
+        <a class="active" onclick="switchPage('orders-admin')">订单管理</a>
+        <a onclick="switchPage('revenue')">本月收益</a>
+        <a onclick="switchPage('dishes')">菜品管理</a>
+        <a onclick="switchPage('users')">用户管理</a>
         <a href="/">← 返回首页</a>
     </div>
     <div class="admin-content">
         <!-- 订单管理 -->
         <div class="page-section active" id="page-orders-admin">
-            <h2>📦 订单管理</h2>
+            <h2>订单管理</h2>
             <div id="adminOrderList"></div>
         </div>
 
         <!-- 收益统计 -->
         <div class="page-section" id="page-revenue">
-            <h2>💰 本月收益</h2>
+            <h2>本月收益</h2>
             <div class="revenue-grid" id="revenueCards">
-                <div class="revenue-card"><div class="icon">💰</div><div class="label">本月总收益</div><div class="number" id="revTotal">加载中...</div></div>
-                <div class="revenue-card"><div class="icon">📋</div><div class="label">本月订单数</div><div class="number" id="revOrders">加载中...</div></div>
-                <div class="revenue-card"><div class="icon">📅</div><div class="label">统计月份</div><div class="number" id="revMonth">加载中...</div></div>
+                <div class="revenue-card"><div class="icon"></div><div class="label">本月总收益</div><div class="number" id="revTotal">加载中...</div></div>
+                <div class="revenue-card"><div class="icon"></div><div class="label">本月订单数</div><div class="number" id="revOrders">加载中...</div></div>
+                <div class="revenue-card"><div class="icon"></div><div class="label">统计月份</div><div class="number" id="revMonth">加载中...</div></div>
             </div>
         </div>
 
         <!-- 菜品管理 -->
         <div class="page-section" id="page-dishes">
-            <h2>📋 菜品管理</h2>
+            <h2>菜品管理</h2>
             <div class="action-bar"><button class="btn btn-primary" onclick="showDishForm()">+ 新增菜品</button></div>
             <div class="table-wrap"><table id="dishTable"><thead><tr><th>ID</th><th>名称</th><th>价格</th><th>省份</th><th>口味</th><th>状态</th><th>销量</th><th>操作</th></tr></thead><tbody></tbody></table></div>
         </div>
 
         <!-- 用户管理 -->
         <div class="page-section" id="page-users">
-            <h2>👥 用户管理</h2>
+            <h2>用户管理</h2>
             <div class="table-wrap"><table id="userTable"><thead><tr><th>ID</th><th>用户名</th><th>昵称</th><th>手机</th><th>角色</th><th>状态</th><th>操作</th></tr></thead><tbody></tbody></table></div>
         </div>
     </div>
@@ -151,7 +151,7 @@
             if(!r) return;
             apiPost('/api/admin/order/status',{id:orderId,status:status}).then(function(res){
                 if(res.code===200){
-                    if(status===3) showAlert('✅ 已通知用户：订单已上菜');
+                    if(status===3) showAlert('已通知用户：订单已上菜');
                     loadAdminOrders();
                 } else {
                     showAlert(res.message||'操作失败');

@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI智能推荐 - 华夏美食地图</title>
+    <title>AI智能推荐 - 餐厅点餐与评价系统</title>
     <link rel="stylesheet" href="/css/style.css">
     <style>
         .recommend-form{padding:24px;margin-bottom:30px;}
@@ -42,14 +42,14 @@
 </head>
 <body>
 <div class="header">
-    <a href="/" class="logo">🍜 <span>华夏美食</span>地图</a>
+    <a href="/" class="logo"><span>餐厅点餐与评价系统</span></a>
     <nav>
-        <a href="/pages/dishes.html">🍽️ 全部菜品</a><a href="/pages/ai-recommend.html">🤖 AI推荐</a><a href="/pages/cart.html">🛒 购物车</a><a href="/pages/orders.html">📋 订单</a><a href="/pages/admin.html" id="adminLink" style="display:none;">⚙️ 管理后台</a>
+        <a href="/pages/dishes.html">全部菜品</a><a href="/pages/ai-recommend.html">AI推荐</a><a href="/pages/cart.html">购物车</a><a href="/pages/orders.html">订单</a><a href="/pages/admin.html" id="adminLink" style="display:none;">管理后台</a>
         <span class="user-info" id="userInfo"></span>
     </nav>
 </div>
 <div class="page-content">
-    <h2>🤖 智能点餐助手</h2>
+    <h2> 智能点餐助手</h2>
     <p class="desc">告诉我你的口味偏好和预算，AI帮你推荐最合适的菜品组合</p>
 
     <div class="recommend-form card">
@@ -62,7 +62,7 @@
         <button class="btn btn-primary" id="recommendBtn" onclick="getRecommend()">获取AI推荐</button>
     </div>
 
-    <div class="loading" id="loading">🤔 AI正在思考推荐方案...</div>
+    <div class="loading" id="loading"> AI正在思考推荐方案...</div>
     <div class="result-area" id="resultArea"></div>
 </div>
 <script src="/js/api.js"></script>
@@ -85,10 +85,10 @@
 
 
     <div class="chat-section card">
-        <h3>💬 与AI对话</h3>
+        <h3>与AI对话</h3>
         <div class="chat-box">
             <div class="chat-msgs" id="chatMsgs">
-                <div class="msg ai">你好！我是智能点餐助手，有什么可以帮你的吗？😊<div class="thinking">可以问我菜品推荐、食材知识、美食文化等问题</div></div>
+                <div class="msg ai">你好！我是餐厅点餐与评价系统的AI助手！可以问我营业时间、地址、电话、菜品等信息，请问有什么可以帮你的？<div class="thinking">可以问我关于本餐厅的问题，也可以问食材知识、美食文化等问题</div></div>
             </div>
             <div class="chat-input-area">
                 <input id="chatInput" placeholder="输入你的问题..." onkeydown="if(event.key==='Enter') sendChat()">
@@ -111,7 +111,7 @@
         if (!isUser) {
             var thinking = document.createElement('div');
             thinking.className = 'thinking';
-            thinking.textContent = 'AI助手 · 基于DeepSeek';
+            thinking.textContent = 'AI助手';
             div.appendChild(thinking);
         }
         chatEl.appendChild(div);
