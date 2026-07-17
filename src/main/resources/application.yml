@@ -20,7 +20,7 @@ mybatis-plus:
     log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
 
 deepseek:
-  api-key: sk-5e978b0c18a5473999af4af3cfc3d2f6
+  api-key: sk-**********************
   api-url: https://api.deepseek.com/chat/completions
   model: deepseek-chat
 
